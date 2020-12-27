@@ -8,8 +8,6 @@ import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 
 import java.io.IOException;
-import java.net.MalformedURLException;
-import java.net.URL;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
@@ -109,14 +107,6 @@ public class GithubUser extends GithubPerson {
             }
             return false;
         });
-    }
-    public URL getHtmlUrl() {
-        try {
-            return new URL((String) data.get("html_url"));
-        } catch (MalformedURLException e) {
-            // this should never happen
-            return null;
-        }
     }
     public String getType() {
         return this.type;

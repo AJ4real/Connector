@@ -45,7 +45,7 @@ public class GithubPerson {
             return null;
         });
     }
-//
+
 //    public boolean isUser() { return this.isUser; }
 //
 //    public boolean isOrganization() { return this.isOrganization; }
@@ -71,7 +71,7 @@ public class GithubPerson {
 //            }
 //        });
 //    }
-
+    public String getHtmlUrl() { return this.htmlUrl; }
     public String getAvatarIconUrl() {
         return this.avatarIconUrl;
     }

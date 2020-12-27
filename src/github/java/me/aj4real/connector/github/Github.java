@@ -4,6 +4,7 @@ import me.aj4real.connector.Connector;
 import me.aj4real.connector.Response;
 import me.aj4real.connector.github.objects.GithubAuthenticatedUser;
 import me.aj4real.connector.github.objects.GithubOrganization;
+import me.aj4real.connector.github.objects.GithubRepository;
 import me.aj4real.connector.github.objects.GithubUser;
 import org.json.simple.JSONObject;
 
@@ -34,5 +35,10 @@ public class Github {
 
     public Optional<GithubOrganization> fetchOrganization(String name) throws IOException {
         return Optional.of(new GithubOrganization(c, (JSONObject) c.readJson(GithubEndpoints.organizations + "/" + name, Connector.REQUEST_METHOD.GET).getData()));
+    }
+
+    public Optional<GithubRepository> fetchRepository(String owner, String repoName) throws IOException {
+
+        return Optional.of(new GithubRepository(c, (JSONObject) c.readJson(GithubEndpoints.repos + "/" + owner + "/" + repoName, Connector.REQUEST_METHOD.GET).getData()));
     }
 }

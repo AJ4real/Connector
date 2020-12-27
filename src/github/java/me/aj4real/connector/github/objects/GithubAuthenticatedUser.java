@@ -18,16 +18,16 @@ import java.util.List;
 import java.util.function.Consumer;
 
 public class GithubAuthenticatedUser extends GithubUser {
-    private final long numFollowers;
-    private final long numFollowing;
-    private final long numPublicRepos;
-    private final long numPublicGists;
+    private final long followersCount;
+    private final long followingCount;
+    private final long publicReposCount;
+    private final long publicGistsCount;
     public GithubAuthenticatedUser(GithubConnector c, JSONObject data) {
         super(c, data);
-        this.numFollowing = (long) data.get("following");
-        this.numFollowers = (long) data.get("followers");
-        this.numPublicGists = (long) data.get("public_gists");
-        this.numPublicRepos = (long) data.get("public_repos");
+        this.followingCount = (long) data.get("following");
+        this.followersCount = (long) data.get("followers");
+        this.publicGistsCount = (long) data.get("public_gists");
+        this.publicReposCount = (long) data.get("public_repos");
     }
 
     public Paginator<List<GithubOrganization>> getOrganizations() {
@@ -110,6 +110,22 @@ public class GithubAuthenticatedUser extends GithubUser {
         });
     }
 
+    public Paginator<List<String>> getEmails() {
+        return Paginator.of((i) -> {
+            try {
+                List<String> emails = new ArrayList<>();
+                JSONArray arr = (JSONArray) c.readJson(GithubEndpoints.base + "/user/emails?per_page=100&page=" + i, Connector.REQUEST_METHOD.GET).getData();
+                for (Object o : arr) {
+                    emails.add((String) o);
+                }
+                return emails;
+            } catch (IOException e) {
+                e.printStackTrace();
+                return null;
+            }
+        });
+    }
+
     public Mono<Integer> addEmails(Collection<String> emails) {
         return Mono.of(() -> {
             try {
@@ -142,16 +158,86 @@ public class GithubAuthenticatedUser extends GithubUser {
         });
     }
 
-    public long getNumPublicRepositories() {
-        return this.numPublicRepos;
+    public Mono<Integer> removeEmails(Collection<String> emails) {
+        return Mono.of(() -> {
+            try {
+                JSONObject req = new JSONObject();
+                JSONArray arr = new JSONArray();
+                emails.forEach(e -> {
+                    arr.add(e);
+                });
+                req.put("emails", arr);
+                return c.readJson(GithubEndpoints.base + "/user/emails", Connector.REQUEST_METHOD.DELETE, req.toString()).getResponseCode();
+            } catch (IOException e) {
+                e.printStackTrace();
+                return -1;
+            }
+        });
     }
-    public long getNumPublicGists() {
-        return this.numPublicGists;
+
+    public Mono<Integer> removeEmail(String email) {
+        return Mono.of(() -> {
+            try {
+                JSONObject req = new JSONObject();
+                JSONArray arr = new JSONArray();
+                arr.add(email);
+                req.put("emails", arr);
+                return c.readJson(GithubEndpoints.base + "/user/emails", Connector.REQUEST_METHOD.DELETE, req.toString()).getResponseCode();
+            } catch (IOException e) {
+                e.printStackTrace();
+                return -1;
+            }
+        });
     }
-    public long getNumFollowers() {
-        return this.numFollowers;
+
+    public Paginator<List<String>> getPublicEmails() {
+        return Paginator.of((i) -> {
+            try {
+                List<String> emails = new ArrayList<>();
+                JSONArray arr = (JSONArray) c.readJson(GithubEndpoints.base + "/user/public_emails?per_page=100&page=" + i, Connector.REQUEST_METHOD.GET).getData();
+                for (Object o : arr) {
+                    emails.add((String) o);
+                }
+                return emails;
+            } catch (IOException e) {
+                e.printStackTrace();
+                return null;
+            }
+        });
     }
-    public long getNumFollowing() {
-        return this.numFollowing;
+
+    public Mono<Integer> follow(String username) {
+        return Mono.of(() -> {
+            try {
+                return c.readJson(GithubEndpoints.base + "/user/following/" + username, Connector.REQUEST_METHOD.PUT).getResponseCode();
+            } catch (IOException e) {
+                e.printStackTrace();
+                return -1;
+            }
+        });
+    }
+
+    public Mono<Integer> unfollow(String username) {
+        return Mono.of(() -> {
+            try {
+                return c.readJson(GithubEndpoints.base + "/user/following/" + username, Connector.REQUEST_METHOD.DELETE).getResponseCode();
+            } catch (IOException e) {
+                e.printStackTrace();
+                return -1;
+            }
+        });
+    }
+
+    public long getPublicRepositoriesCount() {
+        return this.publicReposCount;
+    }
+    public long getPublicGistsCount() {
+        return this.publicGistsCount;
+    }
+    public long getFollowersCount() {
+        return this.followersCount;
+    }
+    public long getFollowingCount() {
+        return this.followingCount;
     }
 }

@@ -6,5 +6,6 @@ public class GithubEndpoints {
     public static String user = base + "/user";
     public static String users = base + "/users";
     public static String events = base + "/events";
+    public static String repos = base + "/repos";
     public static String organizations = base + "/orgs";
 }
