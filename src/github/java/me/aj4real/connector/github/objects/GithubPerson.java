@@ -71,6 +71,7 @@ public class GithubPerson {
 //            }
 //        });
 //    }
+
     public String getHtmlUrl() { return this.htmlUrl; }
     public String getAvatarIconUrl() {
         return this.avatarIconUrl;

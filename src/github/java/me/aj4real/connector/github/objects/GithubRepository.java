@@ -1,13 +1,17 @@
 package me.aj4real.connector.github.objects;
 
 import me.aj4real.connector.Mono;
+import me.aj4real.connector.Paginator;
 import me.aj4real.connector.Response;
 import me.aj4real.connector.github.GithubConnector;
 import me.aj4real.connector.github.specs.ModifyRepositorySpec;
+import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Date;
+import java.util.List;
 import java.util.function.Consumer;
 
 public class GithubRepository {
@@ -41,6 +45,20 @@ public class GithubRepository {
         this.disabled = (boolean) data.get("disabled");
         this.hasPages = (boolean) data.get("has_pages");
         this.isPrivate = (boolean) data.get("private");
+    }
+    public Paginator<List<GitCommit>> listCommits() {
+        return Paginator.of((i) -> {
+            List<GitCommit> commits = new ArrayList<>();
+            try {
+                JSONArray arr = (JSONArray) c.readJson(((String) data.get("commits_url")).replace("{/sha}", "") + "?per_page=100&page=" + i).getData();
+                for(Object o : arr) {
+                    commits.add(new GitCommit(c, (JSONObject) o));
+                }
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+            return commits;
+        });
     }
     public Mono<GithubUser> getOwner() {
         return Mono.of(() -> {

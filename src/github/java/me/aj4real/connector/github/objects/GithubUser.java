@@ -1,9 +1,14 @@
 package me.aj4real.connector.github.objects;
 
+import me.aj4real.connector.Event;
 import me.aj4real.connector.Mono;
 import me.aj4real.connector.Paginator;
 import me.aj4real.connector.github.GithubConnector;
 import me.aj4real.connector.github.GithubEndpoints;
+import me.aj4real.connector.github.Listener;
+import me.aj4real.connector.github.events.GithubEvent;
+import me.aj4real.connector.github.events.PublicEvent;
+import me.aj4real.connector.github.events.WatchEvent;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 
@@ -11,6 +16,8 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
+import java.util.function.Consumer;
 
 public class GithubUser extends GithubPerson {
 
@@ -26,7 +33,19 @@ public class GithubUser extends GithubPerson {
         this.createdAt = GithubConnector.getDate((String) data.get("created_at"));
         this.updatedAt = GithubConnector.getDate((String) data.get("updated_at"));
     }
-
+    public <T extends Event> void listen(Class<T> eventClass, Consumer<T> consumer) {
+        Listener listener = new Listener(c, ((String) data.get("events_url")).replace("{/privacy}", ""), consumer);
+    }
+    public static Mono<GithubUser> of(GithubPerson person) {
+        return Mono.of(() -> {
+            try {
+                return new GithubUser(person.c, (JSONObject) person.c.readJson((String) person.data.get("url")).getData());
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+            return null;
+        });
+    }
     public Paginator<List<GithubRepository>> getSubscribedRepositories() {
         return Paginator.of((i) -> {
             try {
@@ -63,8 +82,8 @@ public class GithubUser extends GithubPerson {
         return Paginator.of((i) -> {
             List<GithubPerson> users = new ArrayList<GithubPerson>();
             try {
-                for(Object o : (JSONArray)c.readJson(((JSONObject)data).get("followers_url").toString().replace("{/other_user}", "") + "?per_page=100?page=" + i).getData()) {
-                    users.add(new GithubUser(c, (JSONObject)o));
+                for(Object o : (JSONArray)c.readJson(((JSONObject)data).get("followers_url").toString().replace("{/other_user}", "") + "?per_page=100&page=" + i).getData()) {
+                    users.add(new GithubPerson(c, (JSONObject)o));
                 }
             } catch (Exception err) {
                 err.printStackTrace();
@@ -88,8 +107,8 @@ public class GithubUser extends GithubPerson {
         return Paginator.of((i) -> {
             List<GithubPerson> users = new ArrayList<GithubPerson>();
             try {
-                for(Object o : (JSONArray)c.readJson(((JSONObject)data).get("following_url").toString().replace("{/other_user}", "") + "?per_page=100?page=" + i).getData()) {
-                    users.add(new GithubUser(c, (JSONObject)o));
+                for(Object o : (JSONArray)c.readJson(((JSONObject)data).get("following_url").toString().replace("{/other_user}", "") + "?per_page=100&page=" + i).getData()) {
+                    users.add(new GithubPerson(c, (JSONObject)o));
                 }
             } catch (Exception err) {
                 err.printStackTrace();
@@ -126,4 +145,5 @@ public class GithubUser extends GithubPerson {
     public boolean isSiteAdmin() {
         return this.siteAdmin;
     }
+
 }
