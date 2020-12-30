@@ -1,5 +1,6 @@
 package me.aj4real.connector.github.objects;
 
+import me.aj4real.connector.Mono;
 import me.aj4real.connector.Paginator;
 import me.aj4real.connector.github.GithubConnector;
 import org.json.simple.JSONArray;
@@ -31,6 +32,7 @@ public class GitCommit {
         this.sha = (String) data.get("sha");
         this.nodeId = (String) data.get("node_id");
         this.htmlUrl = (String) data.get("html_url");
+        System.out.println(data.get("url"));
     }
     public Paginator<GitCommit> getParents() {
         return Paginator.of((i) -> {
@@ -78,5 +80,71 @@ public class GitCommit {
     }
     public String getHtmlUrl() {
         return this.htmlUrl;
+    }
+    public static class Comment {
+        private final GithubConnector c;
+        private final JSONObject data;
+        private final long id, line, position;
+        private final String htmlUrl, nodeId, commitId, body, path;
+        private final Date createdAt, updatedAt;
+        private final GithubPerson user;
+        public Comment(GithubConnector c, JSONObject data){
+            this.c = c;
+            this.data = data;
+            this.id = (long) data.get("id");
+            this.line = (long) data.get("line");
+            this.position = (long) data.get("position");
+            this.htmlUrl = (String) data.get("html_url");
+            this.nodeId = (String) data.get("node_id");
+            this.commitId = (String) data.get("commit_id");
+            this.body = (String) data.get("body");
+            this.path = (String) data.get("path");
+            this.createdAt = GithubConnector.getDate((String) data.get("created_at"));
+            this.updatedAt = GithubConnector.getDate((String) data.get("updated_at"));
+            this.user = new GithubPerson(c, (JSONObject) data.get("use"));
+        }
+        public Mono<GitCommit.Comment> refresh() {
+            return Mono.of(() -> {
+                try {
+                    return new Comment(c, (JSONObject) c.readJson((String) data.get("url")).getData());
+                } catch (IOException e) {
+                    e.printStackTrace();
+                    return null;
+                }
+            });
+        }
+        public long getId() {
+            return this.id;
+        }
+        public long getLine() {
+            return this.line;
+        }
+        public long getPosition() {
+            return this.position;
+        }
+        public String getHtmlUrl() {
+            return this.htmlUrl;
+        }
+        public String getNodeId() {
+            return this.nodeId;
+        }
+        public String getCommitId() {
+            return this.commitId;
+        }
+        public String getBody() {
+            return this.body;
+        }
+        public String getPath() {
+            return this.path;
+        }
+        public Date getCreatedAt() {
+            return createdAt;
+        }
+        public Date getUpdatedAt() {
+            return this.updatedAt;
+        }
+        public GithubPerson getUser() {
+            return this.user;
+        }
     }
 }

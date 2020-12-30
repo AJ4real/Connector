@@ -1,6 +1,7 @@
 package me.aj4real.connector.github.objects;
 
 import me.aj4real.connector.Connector;
+import me.aj4real.connector.Mono;
 import me.aj4real.connector.Paginator;
 import me.aj4real.connector.github.GithubConnector;
 import org.json.simple.JSONArray;
@@ -9,6 +10,7 @@ import org.json.simple.JSONObject;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
 public class GithubPerson {
 
@@ -46,31 +48,31 @@ public class GithubPerson {
         });
     }
 
-//    public boolean isUser() { return this.isUser; }
-//
-//    public boolean isOrganization() { return this.isOrganization; }
-//
-//    public Mono<GithubOrganization> getOrganization() {
-//        if (!isOrganization()) return null;
-//        return Mono.of(() -> {
-//            try {
-//                return new GithubOrganization(c, (JSONObject) c.readJson(htmlUrl).getData());
-//            } catch (IOException e) {
-//                return null;
-//            }
-//        });
-//    }
-//
-//    public Mono<GithubUser> getUser() {
-//        if (!isUser()) return null;
-//        return Mono.of(() -> {
-//            try {
-//                return new GithubUser(c, (JSONObject) c.readJson(htmlUrl).getData());
-//            } catch (IOException e) {
-//                return null;
-//            }
-//        });
-//    }
+    public boolean isUser() { return this.isUser; }
+
+    public boolean isOrganization() { return this.isOrganization; }
+
+    public Optional<Mono<GithubOrganization>> toOrganization() {
+        if (!isOrganization()) return Optional.empty();
+        return Optional.of(Mono.of(() -> {
+            try {
+                return new GithubOrganization(c, (JSONObject) c.readJson((String) data.get("url")).getData());
+            } catch (IOException e) {
+                return null;
+            }
+        }));
+    }
+
+    public Optional<Mono<GithubUser>> toUser() {
+        if (!isUser()) return Optional.empty();
+        return Optional.of(Mono.of(() -> {
+            try {
+                return new GithubUser(c, (JSONObject) c.readJson((String) data.get("url")).getData());
+            } catch (IOException e) {
+                return null;
+            }
+        }));
+    }
 
     public String getHtmlUrl() { return this.htmlUrl; }
     public String getAvatarIconUrl() {

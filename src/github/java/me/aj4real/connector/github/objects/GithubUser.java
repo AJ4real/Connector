@@ -6,9 +6,6 @@ import me.aj4real.connector.Paginator;
 import me.aj4real.connector.github.GithubConnector;
 import me.aj4real.connector.github.GithubEndpoints;
 import me.aj4real.connector.github.Listener;
-import me.aj4real.connector.github.events.GithubEvent;
-import me.aj4real.connector.github.events.PublicEvent;
-import me.aj4real.connector.github.events.WatchEvent;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 
@@ -16,7 +13,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
-import java.util.concurrent.TimeUnit;
+import java.util.Optional;
 import java.util.function.Consumer;
 
 public class GithubUser extends GithubPerson {
@@ -36,14 +33,14 @@ public class GithubUser extends GithubPerson {
     public <T extends Event> void listen(Class<T> eventClass, Consumer<T> consumer) {
         Listener listener = new Listener(c, ((String) data.get("events_url")).replace("{/privacy}", ""), consumer);
     }
-    public static Mono<GithubUser> of(GithubPerson person) {
+    public static Mono<Optional<GithubUser>> of(GithubPerson person) {
         return Mono.of(() -> {
             try {
-                return new GithubUser(person.c, (JSONObject) person.c.readJson((String) person.data.get("url")).getData());
+                return Optional.of(new GithubUser(person.c, (JSONObject) person.c.readJson((String) person.data.get("url")).getData()));
             } catch (IOException e) {
                 e.printStackTrace();
+                return Optional.empty();
             }
-            return null;
         });
     }
     public Paginator<List<GithubRepository>> getSubscribedRepositories() {
