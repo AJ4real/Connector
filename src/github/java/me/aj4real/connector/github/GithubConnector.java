@@ -1,6 +1,8 @@
 package me.aj4real.connector.github;
 
 import me.aj4real.connector.Connector;
+import me.aj4real.connector.Event;
+import me.aj4real.connector.EventHandler;
 import me.aj4real.connector.Response;
 
 import javax.naming.OperationNotSupportedException;
@@ -8,10 +10,11 @@ import java.io.IOException;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.function.Consumer;
 
 public class GithubConnector extends Connector {
 
-    Github github = null;
+    private Github github = null;
 
     public GithubConnector() {
         github = new Github(this);
@@ -62,13 +65,20 @@ public class GithubConnector extends Connector {
         return this.github;
     }
 
+    public <T extends Event> void addHandler(Class<T> eventClass, Consumer<T> consumer) {
+        getHandler().subscribe(eventClass, consumer);
+    }
     public static Date getDate(String strTime) {
-        int year = Integer.valueOf(strTime.substring(0, 4));
-        int month = Integer.valueOf(strTime.substring(5, 7));
-        int day = Integer.valueOf(strTime.substring(8, 10));
-        int hour = Integer.valueOf(strTime.substring(11, 13));
-        int minute = Integer.valueOf(strTime.substring(14, 16));
-        int second = Integer.valueOf(strTime.substring(17, 19));
-        return new Date(year-1900, month, day, hour, minute, second);
+        try {
+            int year = Integer.valueOf(strTime.substring(0, 4));
+            int month = Integer.valueOf(strTime.substring(5, 7));
+            int day = Integer.valueOf(strTime.substring(8, 10));
+            int hour = Integer.valueOf(strTime.substring(11, 13));
+            int minute = Integer.valueOf(strTime.substring(14, 16));
+            int second = Integer.valueOf(strTime.substring(17, 19));
+            return new Date(year-1900, month, day, hour, minute, second);
+        } catch (Exception e) {
+            return null;
+        }
     }
 }

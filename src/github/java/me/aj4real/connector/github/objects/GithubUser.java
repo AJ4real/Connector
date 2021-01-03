@@ -1,11 +1,10 @@
 package me.aj4real.connector.github.objects;
 
-import me.aj4real.connector.Event;
 import me.aj4real.connector.Mono;
 import me.aj4real.connector.Paginator;
 import me.aj4real.connector.github.GithubConnector;
 import me.aj4real.connector.github.GithubEndpoints;
-import me.aj4real.connector.github.Listener;
+import me.aj4real.connector.github.GithubPollingListener;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 
@@ -14,13 +13,13 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.Optional;
-import java.util.function.Consumer;
 
 public class GithubUser extends GithubPerson {
 
     private final String name, company, type;
     private final Date createdAt, updatedAt;
     private final boolean siteAdmin;
+    private static List<Long> listening = new ArrayList<>();
     public GithubUser(GithubConnector c, JSONObject data) {
         super(c, data);
         this.name = (String) data.get("name");
@@ -30,8 +29,8 @@ public class GithubUser extends GithubPerson {
         this.createdAt = GithubConnector.getDate((String) data.get("created_at"));
         this.updatedAt = GithubConnector.getDate((String) data.get("updated_at"));
     }
-    public <T extends Event> void listen(Class<T> eventClass, Consumer<T> consumer) {
-        Listener listener = new Listener(c, ((String) data.get("events_url")).replace("{/privacy}", ""), consumer);
+    public void listen() {
+        c.getHandler().listen(new GithubPollingListener(c, c.getHandler(), ((String) data.get("events_url")).replace("{/privacy}", "")));
     }
     public static Mono<Optional<GithubUser>> of(GithubPerson person) {
         return Mono.of(() -> {

@@ -38,7 +38,6 @@ public class GithubAuthenticatedUser extends GithubUser {
                 for (Object o1 : arr) {
                     orgs.add(new GithubOrganization(c, (JSONObject) o1));
                 }
-                System.out.println(arr.toString());
                 return orgs;
             } catch (IOException e) {
                 e.printStackTrace();

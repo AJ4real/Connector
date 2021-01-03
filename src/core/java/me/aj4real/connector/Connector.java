@@ -11,6 +11,7 @@ import java.util.Map;
 public class Connector {
 
     public String auth = null;
+    private EventHandler handler = new EventHandler();
 
     public void setAuthenticationBasic(String user, String pass) throws OperationNotSupportedException {
         String auth = user + ":" + pass;
@@ -74,6 +75,10 @@ public class Connector {
     public Response readJson(String strUrl, REQUEST_METHOD method) throws IOException { return readJson(strUrl, method, (String) null, null); /* casting fixes error */ }
 
     public Response readJson(String strUrl) throws IOException { return readJson(strUrl, REQUEST_METHOD.GET, null, null); }
+
+    public EventHandler getHandler() {
+        return this.handler;
+    }
 
     public enum REQUEST_METHOD {
         GET,

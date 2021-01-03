@@ -32,7 +32,6 @@ public class GitCommit {
         this.sha = (String) data.get("sha");
         this.nodeId = (String) data.get("node_id");
         this.htmlUrl = (String) data.get("html_url");
-        System.out.println(data.get("url"));
     }
     public Paginator<GitCommit> getParents() {
         return Paginator.of((i) -> {

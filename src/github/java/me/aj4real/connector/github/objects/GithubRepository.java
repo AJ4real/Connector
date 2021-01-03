@@ -46,6 +46,34 @@ public class GithubRepository {
         this.hasPages = (boolean) data.get("has_pages");
         this.isPrivate = (boolean) data.get("private");
     }
+    public Paginator<List<GithubIssue>> listIssues() {
+        return Paginator.of((i) -> {
+            List<GithubIssue> commits = new ArrayList<>();
+            try {
+                JSONArray arr = (JSONArray) c.readJson(((String) data.get("issues_url")).replace("{/number}", "") + "?per_page=100&page=" + i).getData();
+                for(Object o : arr) {
+                    commits.add(new GithubIssue(c, (JSONObject) o));
+                }
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+            return commits;
+        });
+    }
+    public Paginator<List<GithubIssue.Comment>> listIssueComments() {
+        return Paginator.of((i) -> {
+            List<GithubIssue.Comment> commits = new ArrayList<>();
+            try {
+                JSONArray arr = (JSONArray) c.readJson(((String) data.get("issue_comment_url")).replace("{/number}", "") + "?per_page=100&page=" + i).getData();
+                for(Object o : arr) {
+                    commits.add(new GithubIssue.Comment(c, (JSONObject) o));
+                }
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+            return commits;
+        });
+    }
     public Paginator<List<GitCommit>> listCommits() {
         return Paginator.of((i) -> {
             List<GitCommit> commits = new ArrayList<>();
