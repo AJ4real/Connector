@@ -2,7 +2,6 @@ package me.aj4real.connector.github.specs;
 
 import me.aj4real.connector.Connector;
 import me.aj4real.connector.Request;
-import me.aj4real.connector.github.objects.enumerations.RepositoryPermissions;
 import org.json.simple.JSONObject;
 
 public class ModifyOrganizationSpec extends Request {
@@ -87,5 +86,19 @@ public class ModifyOrganizationSpec extends Request {
     @Override
     public Connector.REQUEST_METHOD getRequestMethod() {
         return Connector.REQUEST_METHOD.PATCH;
+    }
+    public enum RepositoryPermissions {
+        READ("read"),
+        READ_WRITE("write"),
+        READ_WRITE_ADMIN("admin"),
+        NONE("none");
+
+        private final String id;
+        RepositoryPermissions(String id) {
+            this.id = id;
+        }
+        public String getId() {
+            return this.id;
+        }
     }
 }

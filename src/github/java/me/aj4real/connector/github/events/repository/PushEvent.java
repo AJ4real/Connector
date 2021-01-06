@@ -1,6 +1,6 @@
 package me.aj4real.connector.github.events.repository;
 
-import me.aj4real.connector.Paginator;
+import me.aj4real.connector.paginators.Paginator;
 import me.aj4real.connector.github.GithubConnector;
 import me.aj4real.connector.github.events.GithubRepositoryEvent;
 import me.aj4real.connector.github.objects.GitCommit;

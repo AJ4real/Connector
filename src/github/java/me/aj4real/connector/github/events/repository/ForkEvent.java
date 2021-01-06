@@ -25,6 +25,7 @@ public class ForkEvent extends GithubRepositoryEvent {
             try {
                 return new GithubOrganization((GithubConnector) c, (JSONObject) c.readJson((String) ((JSONObject) data.get("org")).get("url")).getData());
             } catch (IOException e) {
+                e.printStackTrace();
                 return null;
             }
         }));

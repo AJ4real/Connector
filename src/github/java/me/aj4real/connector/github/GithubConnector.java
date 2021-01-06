@@ -1,8 +1,7 @@
 package me.aj4real.connector.github;
 
 import me.aj4real.connector.Connector;
-import me.aj4real.connector.Event;
-import me.aj4real.connector.EventHandler;
+import me.aj4real.connector.events.Event;
 import me.aj4real.connector.Response;
 
 import javax.naming.OperationNotSupportedException;

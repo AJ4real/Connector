@@ -1,4 +1,4 @@
-package me.aj4real.connector;
+package me.aj4real.connector.events;
 
 import java.util.ArrayList;
 import java.util.HashMap;

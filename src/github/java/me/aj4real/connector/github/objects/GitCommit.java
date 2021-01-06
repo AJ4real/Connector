@@ -1,13 +1,14 @@
 package me.aj4real.connector.github.objects;
 
 import me.aj4real.connector.Mono;
-import me.aj4real.connector.Paginator;
+import me.aj4real.connector.paginators.Paginator;
 import me.aj4real.connector.github.GithubConnector;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 
 import java.io.IOException;
 import java.util.Date;
+import java.util.Optional;
 
 public class GitCommit {
     protected final GithubConnector c;
@@ -83,24 +84,26 @@ public class GitCommit {
     public static class Comment {
         private final GithubConnector c;
         private final JSONObject data;
-        private final long id, line, position;
-        private final String htmlUrl, nodeId, commitId, body, path;
+        private final long id;
+        private final Optional<Long> line, position;
+        private final String htmlUrl, nodeId, commitId, body;
+        private final Optional<String> path;
         private final Date createdAt, updatedAt;
         private final GithubPerson user;
         public Comment(GithubConnector c, JSONObject data){
             this.c = c;
             this.data = data;
             this.id = (long) data.get("id");
-            this.line = (long) data.get("line");
-            this.position = (long) data.get("position");
+            this.line = (data.get("line") != null ? Optional.of((long) data.get("line")) : Optional.empty());
+            this.position = (data.get("position") != null ? Optional.of((long) data.get("position")) : Optional.empty());
             this.htmlUrl = (String) data.get("html_url");
             this.nodeId = (String) data.get("node_id");
             this.commitId = (String) data.get("commit_id");
             this.body = (String) data.get("body");
-            this.path = (String) data.get("path");
+            this.path = (data.get("path") != null ? Optional.of((String) data.get("path")) : Optional.empty());
             this.createdAt = GithubConnector.getDate((String) data.get("created_at"));
             this.updatedAt = GithubConnector.getDate((String) data.get("updated_at"));
-            this.user = new GithubPerson(c, (JSONObject) data.get("use"));
+            this.user = new GithubPerson(c, (JSONObject) data.get("user"));
         }
         public Mono<GitCommit.Comment> refresh() {
             return Mono.of(() -> {
@@ -115,10 +118,10 @@ public class GitCommit {
         public long getId() {
             return this.id;
         }
-        public long getLine() {
+        public Optional<Long> getLine() {
             return this.line;
         }
-        public long getPosition() {
+        public Optional<Long> getPosition() {
             return this.position;
         }
         public String getHtmlUrl() {
@@ -133,7 +136,7 @@ public class GitCommit {
         public String getBody() {
             return this.body;
         }
-        public String getPath() {
+        public Optional<String> getPath() {
             return this.path;
         }
         public Date getCreatedAt() {

@@ -6,7 +6,7 @@ import me.aj4real.connector.Response;
 import me.aj4real.connector.github.GithubApiPreviews;
 import me.aj4real.connector.github.GithubConnector;
 import me.aj4real.connector.github.GithubEndpoints;
-import me.aj4real.connector.Paginator;
+import me.aj4real.connector.paginators.Paginator;
 import me.aj4real.connector.github.specs.CreateRepositorySpec;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;

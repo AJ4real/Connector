@@ -1,5 +1,7 @@
 package me.aj4real.connector;
 
+import me.aj4real.connector.events.EventHandler;
+
 import javax.naming.OperationNotSupportedException;
 import java.io.*;
 import java.net.HttpURLConnection;

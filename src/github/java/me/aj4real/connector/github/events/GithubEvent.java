@@ -1,6 +1,6 @@
 package me.aj4real.connector.github.events;
 
-import me.aj4real.connector.Event;
+import me.aj4real.connector.events.Event;
 import me.aj4real.connector.Mono;
 import me.aj4real.connector.github.GithubConnector;
 import me.aj4real.connector.github.objects.GithubPerson;

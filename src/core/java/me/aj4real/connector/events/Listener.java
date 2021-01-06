@@ -1,4 +1,6 @@
-package me.aj4real.connector;
+package me.aj4real.connector.events;
+
+import me.aj4real.connector.Connector;
 
 public abstract class Listener {
     protected final EventHandler handler;

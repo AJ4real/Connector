@@ -1,5 +1,6 @@
-package me.aj4real.connector;
+package me.aj4real.connector.events;
 
+import me.aj4real.connector.Connector;
 import org.json.simple.JSONObject;
 
 public class Event {

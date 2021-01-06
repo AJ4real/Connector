@@ -1,15 +1,11 @@
 package me.aj4real.connector.github.events;
 
-import me.aj4real.connector.Connector;
-import me.aj4real.connector.Event;
 import me.aj4real.connector.Mono;
 import me.aj4real.connector.github.GithubConnector;
-import me.aj4real.connector.github.objects.GithubPerson;
 import me.aj4real.connector.github.objects.GithubRepository;
 import org.json.simple.JSONObject;
 
 import java.io.IOException;
-import java.util.Date;
 
 public class GithubRepositoryEvent extends GithubEvent {
     private final long repoId;

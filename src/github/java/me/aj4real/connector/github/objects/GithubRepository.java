@@ -1,7 +1,7 @@
 package me.aj4real.connector.github.objects;
 
 import me.aj4real.connector.Mono;
-import me.aj4real.connector.Paginator;
+import me.aj4real.connector.paginators.Paginator;
 import me.aj4real.connector.Response;
 import me.aj4real.connector.github.GithubConnector;
 import me.aj4real.connector.github.specs.ModifyRepositorySpec;
@@ -17,10 +17,10 @@ import java.util.function.Consumer;
 public class GithubRepository {
     protected final JSONObject data;
     protected final GithubConnector c;
-    Date createdAt, updatedAt, pushedAt;
-    String name, language, ownerLoginName, defaultBranchName, htmlLink;
-    long stargazersCount, forksCount, id, size, watchers, openIssuesCount;
-    boolean hasDownloads, hasProjects, hasWiki, archived, disabled, hasPages, isPrivate;
+    private final Date createdAt, updatedAt, pushedAt;
+    private final String name, language, ownerLoginName, defaultBranchName, htmlLink;
+    private final long stargazersCount, forksCount, id, size, watchers, openIssuesCount;
+    private final boolean hasDownloads, hasProjects, hasWiki, archived, disabled, hasPages, isPrivate;
     public GithubRepository(GithubConnector c, JSONObject data) {
         this.c = c;
         this.data = data;
@@ -45,6 +45,16 @@ public class GithubRepository {
         this.disabled = (boolean) data.get("disabled");
         this.hasPages = (boolean) data.get("has_pages");
         this.isPrivate = (boolean) data.get("private");
+    }
+    public Mono<Branch> getBranch(String name) {
+        return Mono.of(() -> {
+            try {
+                return new Branch(c, (JSONObject) c.readJson(((String) data.get("branches_url")).replace("{/branch}", "/" + name)).getData());
+            } catch (IOException e) {
+                e.printStackTrace();
+                return null;
+            }
+        });
     }
     public Paginator<List<GithubIssue>> listIssues() {
         return Paginator.of((i) -> {
@@ -172,5 +182,32 @@ public class GithubRepository {
     }
     public boolean isPrivate() {
         return this.isPrivate;
+    }
+    public static class Branch {
+        protected final JSONObject data;
+        protected final GithubConnector c;
+        String label, ref, sha;
+        public Branch(GithubConnector c, JSONObject data) {
+            this.c = c;
+            this.data = data;
+            this.label = (String) data.get("label");
+            this.ref = (String) data.get("ref");
+            this.sha = (String) data.get("sha");
+        }
+        public String getLabel() {
+            return this.label;
+        }
+        public String getRef() {
+            return this.ref;
+        }
+        public String getSha() {
+            return this.sha;
+        }
+        public GithubPerson getOwner() {
+            return new GithubPerson(c, (JSONObject) data.get("user"));
+        }
+        public GithubRepository getRepository() {
+            return new GithubRepository(c, (JSONObject) data.get("repo"));
+        }
     }
 }

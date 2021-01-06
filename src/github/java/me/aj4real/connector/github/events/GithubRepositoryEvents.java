@@ -4,25 +4,25 @@ import me.aj4real.connector.github.events.repository.*;
 
 public enum GithubRepositoryEvents {
     // https://docs.github.com/en/free-pro-team@latest/developers/webhooks-and-events/github-event-types
-    GithubEvent(GithubRepositoryEvent.class),
-
+    GithubEvent(GithubEvent.class),
+    GithubRepositoryEvent(GithubRepositoryEvent.class),
     CommitCommentEvent(CommitCommentEvent.class),
     CreateEvent(CreateEvent.class),
     DeleteEvent(DeleteEvent.class),
     ForkEvent(ForkEvent.class),
-//    GollumEvent,
+    GollumEvent(GollumEvent.class),
     IssueCommentEvent(IssueCommentEvent.class),
-//    IssuesEvent,
-//    MemberEvent,
+    IssuesEvent(IssuesEvent.class),
+    MemberEvent(MemberEvent.class),
     PublicEvent(PublicEvent.class),
-//    PullRequestEvent,
-//    PullRequestReviewCommentEvent,
+    PullRequestEvent(PullRequestEvent.class),
+    PullRequestReviewCommentEvent(PullRequestReviewCommentEvent.class), //TODO
     PushEvent(PushEvent.class),
-//    ReleaseEvent,
-//    SponsorshipEvent,
+    ReleaseEvent(ReleaseEvent.class), //TODO
+    SponsorshipEvent(null),
     WatchEvent(WatchEvent.class);
-    Class c;
-    GithubRepositoryEvents(Class c) {
+    Class<? extends GithubEvent> c;
+    GithubRepositoryEvents(Class<? extends GithubEvent> c) {
         this.c = c;
     }
     public Class getEventClass() {

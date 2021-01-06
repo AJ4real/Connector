@@ -1,7 +1,7 @@
 package me.aj4real.connector.github.objects;
 
 import me.aj4real.connector.Mono;
-import me.aj4real.connector.Paginator;
+import me.aj4real.connector.paginators.Paginator;
 import me.aj4real.connector.github.GithubConnector;
 import me.aj4real.connector.github.GithubEndpoints;
 import me.aj4real.connector.github.GithubPollingListener;

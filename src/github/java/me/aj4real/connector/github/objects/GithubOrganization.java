@@ -4,7 +4,7 @@ import me.aj4real.connector.Connector;
 import me.aj4real.connector.Mono;
 import me.aj4real.connector.Response;
 import me.aj4real.connector.github.GithubConnector;
-import me.aj4real.connector.Paginator;
+import me.aj4real.connector.paginators.Paginator;
 import me.aj4real.connector.github.specs.CreateOrganizationRepositorySpec;
 import me.aj4real.connector.github.specs.ModifyOrganizationSpec;
 import org.json.simple.JSONArray;
@@ -67,10 +67,7 @@ public class GithubOrganization extends GithubPerson {
         return Paginator.of((i) -> {
             try {
                 List<GithubPerson> members = new ArrayList<GithubPerson>();
-                JSONObject o = new JSONObject();
-                o.put("per_page", 2);
-                o.put("page", i);
-                JSONArray arr = (JSONArray) c.readJson(((String) data.get("organizations_url")).replace("{/member}", ""), Connector.REQUEST_METHOD.GET, o.toString()).getData();
+                JSONArray arr = (JSONArray) c.readJson(((String) data.get("organizations_url")).replace("{/member}", "") + "?per_page=100&page=" + i, Connector.REQUEST_METHOD.GET).getData();
                 for(Object r : arr) {
                     members.add(new GithubPerson(c, (JSONObject) r));
                 }
