@@ -6,6 +6,7 @@ import me.aj4real.connector.Response;
 
 import javax.naming.OperationNotSupportedException;
 import java.io.IOException;
+import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
@@ -67,7 +68,7 @@ public class GithubConnector extends Connector {
     public <T extends Event> void addHandler(Class<T> eventClass, Consumer<T> consumer) {
         getHandler().subscribe(eventClass, consumer);
     }
-    public static Date getDate(String strTime) {
+    public static Date getTimestamp(String strTime) {
         try {
             int year = Integer.valueOf(strTime.substring(0, 4));
             int month = Integer.valueOf(strTime.substring(5, 7));
@@ -79,5 +80,9 @@ public class GithubConnector extends Connector {
         } catch (Exception e) {
             return null;
         }
+    }
+    public static String getTimestamp(Date date) {
+        SimpleDateFormat formatter= new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+        return formatter.format(date).replace(" ", "T") + "Z";
     }
 }

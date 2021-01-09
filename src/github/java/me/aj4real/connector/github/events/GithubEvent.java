@@ -22,7 +22,7 @@ public class GithubEvent extends Event {
         this.actorId = (long) actor.get("id");
         this.actorName = (String) actor.get("login");
         this.actorAvatarUrl = (String) actor.get("avatar_url");
-        this.createdAt = GithubConnector.getDate((String) data.get("created_at"));
+        this.createdAt = GithubConnector.getTimestamp((String) data.get("created_at"));
         this.type = GithubRepositoryEvents.valueOf((String) data.get("type"));
         this.isPublic = (boolean) data.get("public");
     }

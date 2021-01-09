@@ -32,6 +32,14 @@ public class Response {
         }
     }
 
+    public String getResponseMessage() {
+        try {
+            return this.con.getResponseMessage();
+        } catch (Exception e) {
+            return null;
+        }
+    }
+
     public Connector getConnector() {
         return this.c;
     }

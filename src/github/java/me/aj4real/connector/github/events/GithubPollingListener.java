@@ -1,10 +1,11 @@
-package me.aj4real.connector.github;
+package me.aj4real.connector.github.events;
 
-import me.aj4real.connector.*;
+import me.aj4real.connector.Connector;
+import me.aj4real.connector.Response;
 import me.aj4real.connector.events.Event;
 import me.aj4real.connector.events.EventHandler;
 import me.aj4real.connector.events.PollingListener;
-import me.aj4real.connector.github.events.GithubRepositoryEvents;
+import me.aj4real.connector.github.GithubConnector;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 

@@ -38,7 +38,6 @@ public class Github {
     }
 
     public Optional<GithubRepository> fetchRepository(String owner, String repoName) throws IOException {
-
         return Optional.of(new GithubRepository(c, (JSONObject) c.readJson(GithubEndpoints.repos + "/" + owner + "/" + repoName, Connector.REQUEST_METHOD.GET).getData()));
     }
 }

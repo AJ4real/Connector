@@ -4,7 +4,7 @@ import java.util.Optional;
 import java.util.function.Supplier;
 
 public class Mono<T> {
-    Supplier<T> returnValue;
+    private Supplier<T> returnValue;
     private Mono(Supplier<T> returnValue) {
          this.returnValue = returnValue;
     }

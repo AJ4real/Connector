@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Consumer;
 import java.util.function.Function;
 
 public class Paginator<T> {
@@ -19,10 +20,13 @@ public class Paginator<T> {
         page++;
         return returnValue.apply(page);
     }
-    public static class Builder {
-        public static Builder DEFAULT = new Builder(0);
-        Map<String, Object> query = new HashMap<>();
-        public Builder(long page) {
+    public void skip(int number) {
+        page = page + number;
+    }
+    public static class Configuration {
+        public static final Consumer<? super Configuration> DEFAULT = (c) -> c.setEntriesPerPage(100);
+        protected Map<String, Object> query = new HashMap<>();
+        public Configuration(long page) {
             query.put("page", page);
         }
         public void setEntriesPerPage(long perPage) {
@@ -31,21 +35,9 @@ public class Paginator<T> {
         public String buildQuery() {
             List<String> fields = new ArrayList<String>();
             for(Map.Entry<String, Object> e : query.entrySet()) {
-                fields.add(e.getKey() + "=" + String.valueOf(e.getValue()));
+                fields.add(e.getKey() + "=" + e.getValue());
             }
             return "?" + String.join("&", fields);
-        }
-    }
-    public enum SortDirection {
-        ASCENDING("asc"),
-        DESCENDING("desc");
-
-        private String id;
-        SortDirection(String id)  {
-            this.id = id;
-        }
-        public String getIdentifier() {
-            return this.id;
         }
     }
 

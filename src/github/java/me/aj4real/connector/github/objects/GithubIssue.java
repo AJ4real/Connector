@@ -1,6 +1,9 @@
 package me.aj4real.connector.github.objects;
 
 import me.aj4real.connector.Mono;
+import me.aj4real.connector.Response;
+import me.aj4real.connector.github.specs.ModifyIssueSpec;
+import me.aj4real.connector.github.specs.ModifyRepositorySpec;
 import me.aj4real.connector.paginators.Paginator;
 import me.aj4real.connector.github.GithubConnector;
 import org.json.simple.JSONArray;
@@ -11,6 +14,7 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.Optional;
+import java.util.function.Consumer;
 
 public class GithubIssue {
     private final GithubConnector c;
@@ -31,9 +35,9 @@ public class GithubIssue {
         this.htmlUrl = (String) data.get("html_url");
         this.locked = (boolean) data.get("locked");
         this.closed = data.get("closed_by") != null;
-        this.createdAt = GithubConnector.getDate((String) data.get("created_at"));
-        this.updatedAt = GithubConnector.getDate((String) data.get("updated_at"));
-        this.closedAt = GithubConnector.getDate((String) data.get("closed_at"));
+        this.createdAt = GithubConnector.getTimestamp((String) data.get("created_at"));
+        this.updatedAt = GithubConnector.getTimestamp((String) data.get("updated_at"));
+        this.closedAt = GithubConnector.getTimestamp((String) data.get("closed_at"));
     }
     public void listen() {
         //TODO
@@ -75,6 +79,25 @@ public class GithubIssue {
     public Date getClosedAt() {
         return this.closedAt;
     }
+
+    public Mono<GithubIssue> modify(final Consumer<? super ModifyIssueSpec> spec) {
+        return Mono.of(() -> {
+            ModifyIssueSpec mutatedSpec = new ModifyIssueSpec((String) data.get("url"));
+            spec.accept(mutatedSpec);
+            try {
+                Response r = c.sendRequest(mutatedSpec);
+                if (r.getResponseCode() == 200) {
+                    return new GithubIssue(c, (JSONObject) r.getData());
+                } else {
+                    //TODO throw response code exception
+                }
+            } catch(Exception e) {
+                e.printStackTrace();
+            }
+            return null;
+        });
+    }
+
     public Paginator<List<Comment>> listComments() {
         return Paginator.of((i) -> {
             List<Comment> comments = new ArrayList<>();
@@ -161,8 +184,8 @@ public class GithubIssue {
             this.c = c;
             this.data = data;
             this.id = (Long) data.get("id");
-            this.createdAt = GithubConnector.getDate((String) data.get("created_at"));
-            this.updatedAt = GithubConnector.getDate((String) data.get("updated_at"));
+            this.createdAt = GithubConnector.getTimestamp((String) data.get("created_at"));
+            this.updatedAt = GithubConnector.getTimestamp((String) data.get("updated_at"));
             this.nodeId = (String) data.get("node_id");
             this.message = (String) data.get("body");
             this.htmlUrl = (String) data.get("html_url");

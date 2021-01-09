@@ -27,7 +27,7 @@ public class GitCommit {
         this.committerName = (String) ((JSONObject)commit.get("committer")).get("name");
         this.authorEmail = (String) ((JSONObject)commit.get("author")).get("emails");
         this.authorName = (String) ((JSONObject)commit.get("author")).get("name");
-        this.commitDate = GithubConnector.getDate((String) ((JSONObject)commit.get("author")).get("date"));
+        this.commitDate = GithubConnector.getTimestamp((String) ((JSONObject)commit.get("author")).get("date"));
         this.message = (String) commit.get("message");
         this.commentCount = (long) commit.get("comment_count");
         this.sha = (String) data.get("sha");
@@ -101,8 +101,8 @@ public class GitCommit {
             this.commitId = (String) data.get("commit_id");
             this.body = (String) data.get("body");
             this.path = (data.get("path") != null ? Optional.of((String) data.get("path")) : Optional.empty());
-            this.createdAt = GithubConnector.getDate((String) data.get("created_at"));
-            this.updatedAt = GithubConnector.getDate((String) data.get("updated_at"));
+            this.createdAt = GithubConnector.getTimestamp((String) data.get("created_at"));
+            this.updatedAt = GithubConnector.getTimestamp((String) data.get("updated_at"));
             this.user = new GithubPerson(c, (JSONObject) data.get("user"));
         }
         public Mono<GitCommit.Comment> refresh() {

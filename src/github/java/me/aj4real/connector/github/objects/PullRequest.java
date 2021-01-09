@@ -23,8 +23,8 @@ public class PullRequest {
     public PullRequest(GithubConnector c, JSONObject data) {
         this.c = c;
         this.data = data;
-        this.createdAt = GithubConnector.getDate((String) data.get("created_at"));
-        this.updatedAt = GithubConnector.getDate((String) data.get("updated_at"));
+        this.createdAt = GithubConnector.getTimestamp((String) data.get("created_at"));
+        this.updatedAt = GithubConnector.getTimestamp((String) data.get("updated_at"));
         this.id = (long) data.get("id");
         this.number = (long) data.get("number");
         this.commentsCount = (long) data.get("comments");
@@ -50,11 +50,11 @@ public class PullRequest {
     }
     public Optional<Date> getMergedAt() {
         if (data.get("merged_at") == null) return Optional.empty();
-        return Optional.of(GithubConnector.getDate((String) data.get("merged_at")));
+        return Optional.of(GithubConnector.getTimestamp((String) data.get("merged_at")));
     }
     public Optional<Date> getClosedAt() {
         if (data.get("closed_at") == null) return Optional.empty();
-        return Optional.of(GithubConnector.getDate((String) data.get("closed_at")));
+        return Optional.of(GithubConnector.getTimestamp((String) data.get("closed_at")));
     }
     public long getId() {
         return this.id;
@@ -216,7 +216,7 @@ public class PullRequest {
             this.body = (String) data.get("body");
             this.commitId = (String) data.get("commit_id");
             this.state = State.valueOf((String) data.get("state"));
-            this.submittedAt = GithubConnector.getDate((String) data.get("submitted_at"));
+            this.submittedAt = GithubConnector.getTimestamp((String) data.get("submitted_at"));
         }
         public long getId() {
             return this.id;
@@ -287,8 +287,8 @@ public class PullRequest {
                 this.originalCommitId = (String) data.get("original_commit_id");
                 this.body = (String) data.get("body");
                 this.htmlUrl = (String) data.get("html_url");
-                this.createdAt = GithubConnector.getDate((String) data.get("created_at"));
-                this.updatedAt = GithubConnector.getDate((String) data.get("updated_at"));
+                this.createdAt = GithubConnector.getTimestamp((String) data.get("created_at"));
+                this.updatedAt = GithubConnector.getTimestamp((String) data.get("updated_at"));
                 this.id = (long) data.get("id");
                 this.pullRequestReviewId = (long) data.get("pull_request_review_id");
                 this.repliedToId = (long) data.get("in_reply_to_id");

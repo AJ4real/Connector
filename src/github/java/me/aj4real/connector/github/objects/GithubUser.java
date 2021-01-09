@@ -4,7 +4,7 @@ import me.aj4real.connector.Mono;
 import me.aj4real.connector.paginators.Paginator;
 import me.aj4real.connector.github.GithubConnector;
 import me.aj4real.connector.github.GithubEndpoints;
-import me.aj4real.connector.github.GithubPollingListener;
+import me.aj4real.connector.github.events.GithubPollingListener;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 
@@ -26,8 +26,8 @@ public class GithubUser extends GithubPerson {
         this.type = (String) data.get("type");
         this.company = (String) data.get("company");
         this.siteAdmin = (Boolean) data.get("site_admin");
-        this.createdAt = GithubConnector.getDate((String) data.get("created_at"));
-        this.updatedAt = GithubConnector.getDate((String) data.get("updated_at"));
+        this.createdAt = GithubConnector.getTimestamp((String) data.get("created_at"));
+        this.updatedAt = GithubConnector.getTimestamp((String) data.get("updated_at"));
     }
     public void listen() {
         c.getHandler().listen(new GithubPollingListener(c, c.getHandler(), ((String) data.get("events_url")).replace("{/privacy}", "")));

@@ -17,8 +17,8 @@ public class GithubHook {
     public GithubHook(GithubConnector c, JSONObject data) {
         this.data = data;
         this.c = c;
-        this.updatedAt = GithubConnector.getDate((String) data.get("updated_at"));
-        this.createdAt = GithubConnector.getDate((String) data.get("created_at"));
+        this.updatedAt = GithubConnector.getTimestamp((String) data.get("updated_at"));
+        this.createdAt = GithubConnector.getTimestamp((String) data.get("created_at"));
         this.isActive = (boolean) data.get("active");
         this.contextType = (String) ((JSONObject)data.get("config")).get("content_type");
         this.url = (String) ((JSONObject)data.get("config")).get("url");

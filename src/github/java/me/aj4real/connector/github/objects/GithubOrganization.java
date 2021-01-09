@@ -4,6 +4,7 @@ import me.aj4real.connector.Connector;
 import me.aj4real.connector.Mono;
 import me.aj4real.connector.Response;
 import me.aj4real.connector.github.GithubConnector;
+import me.aj4real.connector.github.events.GithubPollingListener;
 import me.aj4real.connector.paginators.Paginator;
 import me.aj4real.connector.github.specs.CreateOrganizationRepositorySpec;
 import me.aj4real.connector.github.specs.ModifyOrganizationSpec;
@@ -36,6 +37,10 @@ public class GithubOrganization extends GithubPerson {
             }
             return null;
         });
+    }
+
+    public void listen() {
+        c.getHandler().listen(new GithubPollingListener(c, c.getHandler(), ((String) data.get("events_url"))));
     }
 
     public Mono<GithubOrganization> edit(final Consumer<? super ModifyOrganizationSpec> spec) {

@@ -1,6 +1,11 @@
 package me.aj4real.connector.github.objects;
 
+import me.aj4real.connector.Connector;
 import me.aj4real.connector.Mono;
+import me.aj4real.connector.github.events.GithubPollingListener;
+import me.aj4real.connector.github.paginatorconfigurations.ListRepositoryContributorsPaginatorConfiguration;
+import me.aj4real.connector.github.paginatorconfigurations.ListRepositoryIssuesPaginatorConfiguration;
+import me.aj4real.connector.github.specs.CreateIssueSpec;
 import me.aj4real.connector.paginators.Paginator;
 import me.aj4real.connector.Response;
 import me.aj4real.connector.github.GithubConnector;
@@ -24,9 +29,9 @@ public class GithubRepository {
     public GithubRepository(GithubConnector c, JSONObject data) {
         this.c = c;
         this.data = data;
-        this.createdAt = GithubConnector.getDate((String) data.get("created_at"));
-        this.updatedAt = GithubConnector.getDate((String) data.get("updated_at"));
-        this.pushedAt = GithubConnector.getDate((String) data.get("pushed_at"));
+        this.createdAt = GithubConnector.getTimestamp((String) data.get("created_at"));
+        this.updatedAt = GithubConnector.getTimestamp((String) data.get("updated_at"));
+        this.pushedAt = GithubConnector.getTimestamp((String) data.get("pushed_at"));
         this.language = (String) data.get("language");
         this.stargazersCount = (long) data.get("stargazers_count");
         this.forksCount = (long) data.get("forks");
@@ -56,11 +61,19 @@ public class GithubRepository {
             }
         });
     }
+    public void listen() {
+        c.getHandler().listen(new GithubPollingListener(c, c.getHandler(), ((String) data.get("events_url"))));
+    }
     public Paginator<List<GithubIssue>> listIssues() {
+        return this.listIssues(Paginator.Configuration.DEFAULT);
+    }
+    public Paginator<List<GithubIssue>> listIssues(final Consumer<? super ListRepositoryIssuesPaginatorConfiguration> config) {
         return Paginator.of((i) -> {
             List<GithubIssue> commits = new ArrayList<>();
             try {
-                JSONArray arr = (JSONArray) c.readJson(((String) data.get("issues_url")).replace("{/number}", "") + "?per_page=100&page=" + i).getData();
+                ListRepositoryIssuesPaginatorConfiguration mutatedConfig = new ListRepositoryIssuesPaginatorConfiguration(i);
+                config.accept(mutatedConfig);
+                JSONArray arr = (JSONArray) c.readJson(((String) data.get("issues_url")).replace("{/number}", "") + mutatedConfig.buildQuery()).getData();
                 for(Object o : arr) {
                     commits.add(new GithubIssue(c, (JSONObject) o));
                 }
@@ -71,10 +84,15 @@ public class GithubRepository {
         });
     }
     public Paginator<List<GithubIssue.Comment>> listIssueComments() {
+        return this.listIssueComments(Paginator.Configuration.DEFAULT);
+    }
+    public Paginator<List<GithubIssue.Comment>> listIssueComments(final Consumer<? super Paginator.Configuration> config) {
         return Paginator.of((i) -> {
             List<GithubIssue.Comment> commits = new ArrayList<>();
             try {
-                JSONArray arr = (JSONArray) c.readJson(((String) data.get("issue_comment_url")).replace("{/number}", "") + "?per_page=100&page=" + i).getData();
+                Paginator.Configuration mutatedConfig = new Paginator.Configuration(i);
+                config.accept(mutatedConfig);
+                JSONArray arr = (JSONArray) c.readJson(((String) data.get("issue_comment_url")).replace("{/number}", "") + mutatedConfig.buildQuery()).getData();
                 for(Object o : arr) {
                     commits.add(new GithubIssue.Comment(c, (JSONObject) o));
                 }
@@ -85,12 +103,36 @@ public class GithubRepository {
         });
     }
     public Paginator<List<GitCommit>> listCommits() {
+        return this.listCommits(Paginator.Configuration.DEFAULT);
+    }
+    public Paginator<List<GitCommit>> listCommits(final Consumer<? super Paginator.Configuration> config) {
         return Paginator.of((i) -> {
             List<GitCommit> commits = new ArrayList<>();
             try {
-                JSONArray arr = (JSONArray) c.readJson(((String) data.get("commits_url")).replace("{/sha}", "") + "?per_page=100&page=" + i).getData();
+                Paginator.Configuration mutatedConfig = new Paginator.Configuration(i);
+                config.accept(mutatedConfig);
+                JSONArray arr = (JSONArray) c.readJson(((String) data.get("commits_url")).replace("{/sha}", "") + mutatedConfig.buildQuery()).getData();
                 for(Object o : arr) {
                     commits.add(new GitCommit(c, (JSONObject) o));
+                }
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+            return commits;
+        });
+    }
+    public Paginator<List<GithubPerson>> listContributors() {
+        return this.listContributors(Paginator.Configuration.DEFAULT);
+    }
+    public Paginator<List<GithubPerson>> listContributors(final Consumer<? super ListRepositoryContributorsPaginatorConfiguration> config) {
+        return Paginator.of((i) -> {
+            ListRepositoryContributorsPaginatorConfiguration mutatedConfig = new ListRepositoryContributorsPaginatorConfiguration(i);
+            config.accept(mutatedConfig);
+            List<GithubPerson> commits = new ArrayList<>();
+            try {
+                JSONArray arr = (JSONArray) c.readJson(((String) data.get("contributors_url")) + mutatedConfig.buildQuery()).getData();
+                for(Object o : arr) {
+                    commits.add(new GithubPerson(c, (JSONObject) o));
                 }
             } catch (IOException e) {
                 e.printStackTrace();
@@ -116,11 +158,60 @@ public class GithubRepository {
                 Response r = c.sendRequest(mutatedSpec);
                 if (r.getResponseCode() == 200) {
                     return new GithubRepository(c, (JSONObject) r.getData());
+                } else {
+                    //TODO throw response code exception
                 }
             } catch (IOException e) {
                 e.printStackTrace();
             }
             return null;
+        });
+    }
+    public Mono<GithubIssue> createIssue(final Consumer<? super CreateIssueSpec> spec) {
+        return Mono.of(() -> {
+            CreateIssueSpec mutatedSpec = new CreateIssueSpec(((String) data.get("issues_url")).replace("{/number}", ""));
+            spec.accept(mutatedSpec);
+            try {
+                Response r = c.sendRequest(mutatedSpec);
+                if (r.getResponseCode() == 201) {
+                    return new GithubIssue(c, (JSONObject) r.getData());
+                } else {
+                    //TODO throw response code exception
+                }
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+            return null;
+        });
+    }
+    public Mono<Integer> delete() {
+        return Mono.of(() -> {
+            try {
+                return c.readJson((String) data.get("url"), Connector.REQUEST_METHOD.DELETE).getResponseCode();
+            } catch (IOException e) {
+                e.printStackTrace();
+                return -1;
+            }
+        });
+    }
+    public Mono<Integer> enableAutomatedSecurityFixes() {
+        return Mono.of(() -> {
+            try {
+                return c.readJson(data.get("url") + "/automated-security-fixes", Connector.REQUEST_METHOD.PUT).getResponseCode();
+            } catch (IOException e) {
+                e.printStackTrace();
+                return -1;
+            }
+        });
+    }
+    public Mono<Integer> disableAutomatedSecurityFixes() {
+        return Mono.of(() -> {
+            try {
+                return c.readJson(data.get("url") + "/automated-security-fixes", Connector.REQUEST_METHOD.DELETE).getResponseCode();
+            } catch (IOException e) {
+                e.printStackTrace();
+                return -1;
+            }
         });
     }
     public Date getUpdatedAt() {
@@ -149,6 +240,9 @@ public class GithubRepository {
     }
     public long getOpenIssuesCount() {
         return this.openIssuesCount;
+    }
+    public String getName() {
+        return this.name;
     }
     public String getLanguage() {
         return this.language;
