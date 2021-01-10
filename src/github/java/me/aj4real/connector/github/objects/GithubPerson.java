@@ -2,6 +2,8 @@ package me.aj4real.connector.github.objects;
 
 import me.aj4real.connector.Connector;
 import me.aj4real.connector.Mono;
+import me.aj4real.connector.github.paginatorconfigurations.ListRepositoriesPaginatorConfiguration;
+import me.aj4real.connector.github.paginatorconfigurations.ListRepositoryContributorsPaginatorConfiguration;
 import me.aj4real.connector.paginators.Paginator;
 import me.aj4real.connector.github.GithubConnector;
 import org.json.simple.JSONArray;
@@ -11,6 +13,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.function.Consumer;
 
 public class GithubPerson {
 
@@ -33,10 +36,15 @@ public class GithubPerson {
     }
 
     public Paginator<List<GithubRepository>> getRepositories() {
+        return getRepositories(Paginator.Configuration.DEFAULT);
+    }
+    public Paginator<List<GithubRepository>> getRepositories(final Consumer<? super ListRepositoriesPaginatorConfiguration> config) {
         return Paginator.of((i) -> {
             try {
+                ListRepositoriesPaginatorConfiguration mutatedConfig = new ListRepositoriesPaginatorConfiguration(i);
+                config.accept(mutatedConfig);
                 List<GithubRepository> orgs = new ArrayList<GithubRepository>();
-                JSONArray arr = (JSONArray) c.readJson(data.get("repos_url") + "?per_page=100&page=" + i, Connector.REQUEST_METHOD.GET).getData();
+                JSONArray arr = (JSONArray) c.readJson(data.get("repos_url") + mutatedConfig.buildQuery(), Connector.REQUEST_METHOD.GET).getData();
                 for (Object o1 : arr) {
                     orgs.add(new GithubRepository(c, (JSONObject) o1));
                 }

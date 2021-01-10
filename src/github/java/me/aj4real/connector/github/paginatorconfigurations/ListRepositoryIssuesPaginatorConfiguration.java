@@ -1,7 +1,6 @@
 package me.aj4real.connector.github.paginatorconfigurations;
 
 import me.aj4real.connector.github.GithubConnector;
-import me.aj4real.connector.github.objects.GithubUser;
 import me.aj4real.connector.paginators.Paginator;
 
 import java.util.Date;
@@ -39,17 +38,6 @@ public class ListRepositoryIssuesPaginatorConfiguration extends Paginator.Config
         OPEN,
         CLOSED,
         ALL;
-    }
-    public enum SortDirection {
-        ASCENDING("asc"),
-        DESCENDING("desc");
-        private String s;
-        SortDirection(String s) {
-            this.s = s;
-        }
-        public String getIdentifier() {
-            return s;
-        }
     }
     public enum SortType {
         CREATED,

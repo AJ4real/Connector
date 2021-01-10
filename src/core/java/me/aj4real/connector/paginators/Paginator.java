@@ -39,6 +39,17 @@ public class Paginator<T> {
             }
             return "?" + String.join("&", fields);
         }
+        public enum SortDirection {
+            ASCENDING("asc"),
+            DESCENDING("desc");
+            private String s;
+            SortDirection(String s) {
+                this.s = s;
+            }
+            public String getIdentifier() {
+                return s;
+            }
+        }
     }
 
 }

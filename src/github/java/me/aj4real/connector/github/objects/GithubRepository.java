@@ -2,7 +2,9 @@ package me.aj4real.connector.github.objects;
 
 import me.aj4real.connector.Connector;
 import me.aj4real.connector.Mono;
+import me.aj4real.connector.github.GithubApiPreviews;
 import me.aj4real.connector.github.events.GithubPollingListener;
+import me.aj4real.connector.github.paginatorconfigurations.ListBranchesPaginatorConfiguration;
 import me.aj4real.connector.github.paginatorconfigurations.ListRepositoryContributorsPaginatorConfiguration;
 import me.aj4real.connector.github.paginatorconfigurations.ListRepositoryIssuesPaginatorConfiguration;
 import me.aj4real.connector.github.specs.CreateIssueSpec;
@@ -14,9 +16,7 @@ import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.List;
+import java.util.*;
 import java.util.function.Consumer;
 
 public class GithubRepository {
@@ -61,8 +61,72 @@ public class GithubRepository {
             }
         });
     }
+    public Paginator<List<String>> listBranchNames() {
+        return this.listBranchNames(Paginator.Configuration.DEFAULT);
+    }
+    public Paginator<List<String>> listBranchNames(final Consumer<? super ListBranchesPaginatorConfiguration> config) {
+        return Paginator.of((i) -> {
+            List<String> names = new ArrayList<>();
+            try {
+                ListBranchesPaginatorConfiguration mutatedConfig = new ListBranchesPaginatorConfiguration(i);
+                config.accept(mutatedConfig);
+                JSONArray arr = (JSONArray) c.readJson(((String) data.get("branches_url")).replace("{/number}", "") + mutatedConfig.buildQuery()).getData();
+                for(Object o : arr) {
+                    names.add((String) ((JSONObject) o).get("name"));
+                }
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+            return names;
+        });
+    }
     public void listen() {
         c.getHandler().listen(new GithubPollingListener(c, c.getHandler(), ((String) data.get("events_url"))));
+    }
+    public Mono<GithubRepository> transfer(String newOwner) {
+        return Mono.of(() -> {
+            try {
+                JSONObject o = new JSONObject();
+                o.put("new_owner", newOwner);
+                return new GithubRepository(c, (JSONObject) c.readJson(data.get("url") + "/transfer", Connector.REQUEST_METHOD.POST, o.toString()).getData());
+            } catch (Exception e) {
+                e.printStackTrace();
+                return null;
+            }
+        });
+    }
+    public Mono<GithubRepository> transfer(GithubPerson p) {
+        return transfer(p.getLoginName());
+    }
+    public Mono<Boolean> isVulnerabilityAlertsEnabled() {
+        return Mono.of(() -> {
+            try {
+                return c.readJson(data.get("url") + "/vulnerability-alerts", Connector.REQUEST_METHOD.DELETE, null, GithubApiPreviews.ENABLE_DISABLE_VULNERABILITY_ALERTS).getResponseCode() == 204;
+            } catch (Exception e) {
+                e.printStackTrace();
+                return null;
+            }
+        });
+    }
+    public Mono<Integer> disableVulnerabilityAlerts() {
+        return Mono.of(() -> {
+            try {
+                return c.readJson(data.get("url") + "/vulnerability-alerts", Connector.REQUEST_METHOD.DELETE, null, GithubApiPreviews.ENABLE_DISABLE_VULNERABILITY_ALERTS).getResponseCode();
+            } catch (Exception e) {
+                e.printStackTrace();
+                return -1;
+            }
+        });
+    }
+    public Mono<Integer> enableVulnerabilityAlerts() {
+        return Mono.of(() -> {
+            try {
+                return c.readJson(data.get("url") + "/vulnerability-alerts", Connector.REQUEST_METHOD.POST, null, GithubApiPreviews.ENABLE_DISABLE_VULNERABILITY_ALERTS).getResponseCode();
+            } catch (Exception e) {
+                e.printStackTrace();
+                return -1;
+            }
+        });
     }
     public Paginator<List<GithubIssue>> listIssues() {
         return this.listIssues(Paginator.Configuration.DEFAULT);
@@ -81,6 +145,40 @@ public class GithubRepository {
                 e.printStackTrace();
             }
             return commits;
+        });
+    }
+    public Mono<Map<String,Long>> getLanguages() {
+        return Mono.of(() -> {
+            try {
+                Map<String,Long> map = new HashMap<String,Long>();
+                JSONObject o = (JSONObject) c.readJson((String) data.get("languages_url")).getData();
+                for (Object k : o.keySet()) {
+                    String key = (String) k;
+                    if(o.get(key) instanceof Long) {
+                        long value = (Long) o.get(key);
+                        map.put(key, value);
+                    }
+                }
+                return map;
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+            return null;
+        });
+    }
+    public Mono<List<String>> getTopics() {
+        return Mono.of(() -> {
+            try {
+                JSONArray arr = (JSONArray) ((JSONObject) c.readJson(data.get("url") + "/topics", Connector.REQUEST_METHOD.GET, null, GithubApiPreviews.REPOSITORY_TOPICS).getData()).get("names");
+                List<String> topics = new ArrayList<>();
+                for (Object o1 : arr) {
+                    topics.add((String) o1);
+                }
+                return topics;
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+            return new ArrayList<>();
         });
     }
     public Paginator<List<GithubIssue.Comment>> listIssueComments() {
@@ -140,10 +238,10 @@ public class GithubRepository {
             return commits;
         });
     }
-    public Mono<GithubUser> getOwner() {
+    public Mono<GithubPerson> getOwner() {
         return Mono.of(() -> {
             try {
-                return new GithubUser(c, (JSONObject) c.readJson((String) ((JSONObject) data.get("owner")).get("url")).getData());
+                return new GithubPerson(c, (JSONObject) c.readJson((String) ((JSONObject) data.get("owner")).get("url")).getData());
             } catch (IOException e) {
                 e.printStackTrace();
                 return null;
@@ -197,7 +295,7 @@ public class GithubRepository {
     public Mono<Integer> enableAutomatedSecurityFixes() {
         return Mono.of(() -> {
             try {
-                return c.readJson(data.get("url") + "/automated-security-fixes", Connector.REQUEST_METHOD.PUT).getResponseCode();
+                return c.readJson(data.get("url") + "/automated-security-fixes", Connector.REQUEST_METHOD.PUT, null, GithubApiPreviews.ENABLE_DISABLE_AUTOMATIC_SECURITY_FIXES).getResponseCode();
             } catch (IOException e) {
                 e.printStackTrace();
                 return -1;
@@ -207,7 +305,7 @@ public class GithubRepository {
     public Mono<Integer> disableAutomatedSecurityFixes() {
         return Mono.of(() -> {
             try {
-                return c.readJson(data.get("url") + "/automated-security-fixes", Connector.REQUEST_METHOD.DELETE).getResponseCode();
+                return c.readJson(data.get("url") + "/automated-security-fixes", Connector.REQUEST_METHOD.DELETE, null, GithubApiPreviews.ENABLE_DISABLE_AUTOMATIC_SECURITY_FIXES).getResponseCode();
             } catch (IOException e) {
                 e.printStackTrace();
                 return -1;
@@ -280,7 +378,7 @@ public class GithubRepository {
     public static class Branch {
         protected final JSONObject data;
         protected final GithubConnector c;
-        String label, ref, sha;
+        private final String label, ref, sha;
         public Branch(GithubConnector c, JSONObject data) {
             this.c = c;
             this.data = data;
@@ -302,6 +400,15 @@ public class GithubRepository {
         }
         public GithubRepository getRepository() {
             return new GithubRepository(c, (JSONObject) data.get("repo"));
+        }
+        public static class Protection {
+            protected final JSONObject data;
+            protected final GithubConnector c;
+            public Protection(GithubConnector c, JSONObject data) {
+                this.c = c;
+                this.data = data;
+            }
+            // TODO https://docs.github.com/en/free-pro-team@latest/rest/reference/repos#get-branch-protection
         }
     }
 }
