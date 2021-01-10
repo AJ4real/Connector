@@ -1,6 +1,12 @@
 # Connector
 I wrote this API because I was bored and had nothing to do.
+
+Q: What is the purpose of the `Mono` class and `block()` methods?
+
+A: `block()` methods are used to signify to developers that what they are trying to do will send requests to the REST API they are interfacing with.
+
 ```java
+// Basic setup
 GithubConnector github = new GithubConnector();
 github.setPersonalAuthenticationToken("my token");
 
@@ -15,6 +21,13 @@ GithubRepository repo = github.getGithub().fetchRepository("AJ4real", "Connector
 
 // Get an organization
 GithubOrganization org = github.getGithub().fetchOrganization("Adriftus Studios").get();
+
+// Some methods in this API will return a GithubPerson; which can either be a GithubUser, or a GithubOrganization, but not both.
+GithubPerson person = repo.getOwner().block();
+// For example; if the owner of the repository is a organization, you would use:
+person.toOrganization().get().block();
+// But if the owner of the repository is a User and not a organization, you would use:
+person.toUser().get().block();
 
 // List all publicly available contributors for a repository
 Paginator<List<GithubPerson>> contributors = repo.listContributors((spec) -> {
