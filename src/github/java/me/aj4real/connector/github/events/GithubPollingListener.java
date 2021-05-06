@@ -1,6 +1,7 @@
 package me.aj4real.connector.github.events;
 
 import me.aj4real.connector.Connector;
+import me.aj4real.connector.Endpoint;
 import me.aj4real.connector.Response;
 import me.aj4real.connector.events.Event;
 import me.aj4real.connector.events.EventHandler;
@@ -21,12 +22,12 @@ public class GithubPollingListener extends PollingListener {
     public GithubPollingListener(Connector c, EventHandler handler, String url) {
         super(c, handler, url);
         try {
-            Response r = c.readJson(url);
+            Response r = c.readJson(new Endpoint(Endpoint.HttpMethod.GET, url));
             this.etag = r.getHeaders().get("ETag").get(0);
             this.refreshDelay = (Long.valueOf(r.getHeaders().get("X-Poll-Interval").get(0)) * 1000) + 1000;
             listen();
         } catch (IOException e) {
-            e.printStackTrace();
+            me.aj4real.connector.Logger.handle(e);
         }
     }
 
@@ -36,15 +37,15 @@ public class GithubPollingListener extends PollingListener {
                 try {
                     Thread.sleep(refreshDelay);
                 } catch (InterruptedException e) {
-                    e.printStackTrace();
+                    me.aj4real.connector.Logger.handle(e);
                 }
                 Map<String, String> headers = new HashMap<>();
                 headers.put("If-None-Match", etag);
                 Response r = null;
                 try {
-                    r = c.readJson(url, Connector.REQUEST_METHOD.GET, null, headers);
+                    r = c.readJson(new Endpoint(Endpoint.HttpMethod.GET, url), null, headers);
                 } catch (IOException e) {
-                    e.printStackTrace();
+                    me.aj4real.connector.Logger.handle(e);
                 }
                 etag = r.getHeaders().get("ETag").get(0);
 
@@ -61,7 +62,7 @@ public class GithubPollingListener extends PollingListener {
                         } catch (Exception e) {
                             System.out.println("ERR : " + type);
                             System.out.println(jo.toString());
-                            e.printStackTrace();
+                            me.aj4real.connector.Logger.handle(e);
                         }
                     }
                 }

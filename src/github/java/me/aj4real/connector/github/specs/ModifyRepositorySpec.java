@@ -1,6 +1,7 @@
 package me.aj4real.connector.github.specs;
 
 import me.aj4real.connector.Connector;
+import me.aj4real.connector.Endpoint;
 import me.aj4real.connector.Request;
 import org.json.simple.JSONObject;
 
@@ -9,10 +10,9 @@ public class ModifyRepositorySpec extends Request {
     private int teamId = -1;
     private boolean isPrivate, hasIssues, hasProjects, hasWiki, isTemplate, autoInit, allowSquashMerge, allowMergeCommit, allowRebaseMerge, deleteBranchOnMerge, hasDownloads, isArchived;
     private boolean _teamId, _isPrivate, _hasIssues, _hasProjects, _hasWiki, _isTemplate, _autoInit, _allowSquashMerge, _allowMergeCommit, _allowRebaseMerge, _deleteBranchOnMerge, _hasDownloads, _isArchived = false;
-    public ModifyRepositorySpec(String url) {
-        super(url);
+    public ModifyRepositorySpec(Endpoint endpoint) {
+        super(endpoint);
     }
-
     public void setName(String value) {
         this.name = value;
     }
@@ -103,9 +103,4 @@ public class ModifyRepositorySpec extends Request {
         if (_isArchived) data.put("archived", isArchived);
         return data;
     }
-    @Override
-    public Connector.REQUEST_METHOD getRequestMethod() {
-        return Connector.REQUEST_METHOD.PATCH;
-    }
-
 }

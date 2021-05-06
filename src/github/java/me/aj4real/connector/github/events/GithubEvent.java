@@ -1,8 +1,9 @@
 package me.aj4real.connector.github.events;
 
 import me.aj4real.connector.events.Event;
-import me.aj4real.connector.Mono;
+import me.aj4real.connector.Task;
 import me.aj4real.connector.github.GithubConnector;
+import me.aj4real.connector.github.GithubEndpoints;
 import me.aj4real.connector.github.objects.GithubPerson;
 import org.json.simple.JSONObject;
 
@@ -47,12 +48,12 @@ public class GithubEvent extends Event {
     public String getActorAvatarUrl() {
         return this.actorAvatarUrl;
     }
-    public Mono<GithubPerson> getActor() {
-        return Mono.of(() -> {
+    public Task<GithubPerson> getActor() {
+        return Task.of(() -> {
             try {
-                return new GithubPerson((GithubConnector) c, (JSONObject) c.readJson((String) ((JSONObject)data.get("actor")).get("url")).getData());
+                return new GithubPerson((GithubConnector) c, (JSONObject) c.readJson(GithubEndpoints.USERS.fulfil("user", actorName)).getData());
             } catch (IOException e) {
-                e.printStackTrace();
+                me.aj4real.connector.Logger.handle(e);
                 return null;
             }
         });

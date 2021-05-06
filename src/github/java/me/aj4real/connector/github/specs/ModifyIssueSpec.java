@@ -1,13 +1,14 @@
 package me.aj4real.connector.github.specs;
 
 import me.aj4real.connector.Connector;
+import me.aj4real.connector.Endpoint;
 import me.aj4real.connector.Request;
 import org.json.simple.JSONObject;
 
 public class ModifyIssueSpec extends Request {
     private JSONObject data;
-    public ModifyIssueSpec(String url) {
-        super(url);
+    public ModifyIssueSpec(Endpoint endpoint) {
+        super(endpoint);
         data = new JSONObject();
     }
 
@@ -21,11 +22,6 @@ public class ModifyIssueSpec extends Request {
 
     public void setState(State state) {
         data.put("state", state.name().toLowerCase());
-    }
-
-    @Override
-    public Connector.REQUEST_METHOD getRequestMethod() {
-        return Connector.REQUEST_METHOD.PATCH;
     }
 
     @Override

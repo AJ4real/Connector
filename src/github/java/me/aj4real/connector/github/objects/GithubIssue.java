@@ -1,9 +1,10 @@
 package me.aj4real.connector.github.objects;
 
-import me.aj4real.connector.Mono;
+import me.aj4real.connector.Endpoint;
+import me.aj4real.connector.Task;
 import me.aj4real.connector.Response;
+import me.aj4real.connector.github.GithubEndpoints;
 import me.aj4real.connector.github.specs.ModifyIssueSpec;
-import me.aj4real.connector.github.specs.ModifyRepositorySpec;
 import me.aj4real.connector.paginators.Paginator;
 import me.aj4real.connector.github.GithubConnector;
 import org.json.simple.JSONArray;
@@ -21,7 +22,7 @@ public class GithubIssue {
     private final JSONObject data;
     private final Date createdAt, updatedAt, closedAt;
     private final long id, number, commentsCount;
-    private final String nodeId, title, message, htmlUrl;
+    private final String nodeId, title, message, htmlUrl, ownerLoginName, repoName;
     private final boolean locked, closed;
     public GithubIssue(GithubConnector c, JSONObject data) {
         this.c = c;
@@ -33,6 +34,10 @@ public class GithubIssue {
         this.title = (String) data.get("title");
         this.message = (String) data.get("body");
         this.htmlUrl = (String) data.get("html_url");
+        JSONObject repo = (JSONObject) data.get("repository");
+        this.repoName = (String) repo.get("name");
+        JSONObject owner = (JSONObject) repo.get("owner");
+        this.ownerLoginName = (String) owner.get("login");
         this.locked = (boolean) data.get("locked");
         this.closed = data.get("closed_by") != null;
         this.createdAt = GithubConnector.getTimestamp((String) data.get("created_at"));
@@ -80,9 +85,9 @@ public class GithubIssue {
         return this.closedAt;
     }
 
-    public Mono<GithubIssue> modify(final Consumer<? super ModifyIssueSpec> spec) {
-        return Mono.of(() -> {
-            ModifyIssueSpec mutatedSpec = new ModifyIssueSpec((String) data.get("url"));
+    public Task<GithubIssue> modify(final Consumer<? super ModifyIssueSpec> spec) {
+        return Task.of(() -> {
+            ModifyIssueSpec mutatedSpec = new ModifyIssueSpec(GithubEndpoints.MODIFY_REPOSITORY_ISSUE.fulfil("owner", ownerLoginName).fulfil("repo", repoName).fulfil("issue_number", String.valueOf(number)));
             spec.accept(mutatedSpec);
             try {
                 Response r = c.sendRequest(mutatedSpec);
@@ -92,7 +97,7 @@ public class GithubIssue {
                     //TODO throw response code exception
                 }
             } catch(Exception e) {
-                e.printStackTrace();
+                me.aj4real.connector.Logger.handle(e);
             }
             return null;
         });
@@ -102,12 +107,12 @@ public class GithubIssue {
         return Paginator.of((i) -> {
             List<Comment> comments = new ArrayList<>();
             try {
-                JSONArray arr = (JSONArray) c.readJson(((String) data.get("comments_url")) + "?per_page=100&page=" + i).getData();
+                JSONArray arr = (JSONArray) c.readJson(GithubEndpoints.LIST_ISSUE_COMMENTS.fulfil("owner", ownerLoginName).fulfil("repo", repoName).fulfil("issue_number", String.valueOf(number)).addQuery("?per_page=100&page=" + i)).getData();
                 for(Object o : arr) {
                     comments.add(new Comment(c, (JSONObject) o));
                 }
             } catch (IOException e) {
-                e.printStackTrace();
+                me.aj4real.connector.Logger.handle(e);
             }
             return comments;
         });
@@ -116,12 +121,12 @@ public class GithubIssue {
         return Paginator.of((i) -> {
             List<Label> labels = new ArrayList<>();
             try {
-                JSONArray arr = (JSONArray) c.readJson(((String) data.get("labels_url")).replace("{/name}", "") + "?per_page=100&page=" + i).getData();
+                JSONArray arr = (JSONArray) c.readJson(GithubEndpoints.LIST_ISSUE_LABELS.fulfil("owner", ownerLoginName).fulfil("repo", repoName).fulfil("issue_number", String.valueOf(number)).addQuery("?per_page=100&page=" + i)).getData();
                 for(Object o : arr) {
                     labels.add(new Label(c, (JSONObject) o));
                 }
             } catch (IOException e) {
-                e.printStackTrace();
+                me.aj4real.connector.Logger.handle(e);
             }
             return labels;
         });
@@ -133,30 +138,30 @@ public class GithubIssue {
     public State getState() {
         return State.valueOf((String) data.get("state"));
     }
-    public Mono<GithubUser> getUser() {
-        return Mono.of(() -> {
+    public Task<GithubUser> getUser() {
+        return Task.of(() -> {
             try {
-                return new GithubUser(c, (JSONObject) c.readJson((String) ((JSONObject) data.get("user")).get("url")).getData());
+                return new GithubUser(c, (JSONObject) c.readJson(GithubEndpoints.USERS.fulfil("user", (String) ((JSONObject) data.get("user")).get("url"))).getData());
             } catch (IOException e) {
                 return null;
             }
         });
     }
-    public Optional<Mono<GithubUser>> getClosedBy() {
+    public Optional<Task<GithubUser>> getClosedBy() {
         if (data.get("closed_by") == null) return Optional.empty();
-        return Optional.of(Mono.of(() -> {
+        return Optional.of(Task.of(() -> {
             try {
-                return new GithubUser(c, (JSONObject) c.readJson((String) ((JSONObject) data.get("closed_by")).get("url")).getData());
+                return new GithubUser(c, (JSONObject) c.readJson(GithubEndpoints.USERS.fulfil("user", (String) ((JSONObject) data.get("closed_by")).get("url"))).getData());
             } catch (IOException e) {
                 return null;
             }
         }));
     }
-    public Optional<Mono<GithubUser>> getAssignee() {
+    public Optional<Task<GithubUser>> getAssignee() {
         if (data.get("assignee") == null) return Optional.empty();
-        return Optional.of(Mono.of(() -> {
+        return Optional.of(Task.of(() -> {
             try {
-                return new GithubUser(c, (JSONObject) c.readJson((String) ((JSONObject) data.get("assignee")).get("url")).getData());
+                return new GithubUser(c, (JSONObject) c.readJson(GithubEndpoints.USERS.fulfil("user", (String) ((JSONObject) data.get("assignee")).get("url"))).getData());
             } catch (IOException e) {
                 return null;
             }
@@ -170,39 +175,41 @@ public class GithubIssue {
                 assignees.add(new GithubPerson(c, (JSONObject) o));
             }
         } catch(Exception e) {
-            e.printStackTrace();
+            me.aj4real.connector.Logger.handle(e);
         }
         return assignees;
     }
     public static class Comment {
         private final GithubConnector c;
         private final JSONObject data;
-        private final long id;
+        private final long id, userId;
         private final Date createdAt, updatedAt;
-        private final String nodeId, message, htmlUrl;
+        private final String nodeId, message, htmlUrl, userLoginName;
         public Comment(GithubConnector c, JSONObject data) {
             this.c = c;
             this.data = data;
             this.id = (Long) data.get("id");
+            this.userId = (Long) ((JSONObject) data.get("user")).get("id");
             this.createdAt = GithubConnector.getTimestamp((String) data.get("created_at"));
             this.updatedAt = GithubConnector.getTimestamp((String) data.get("updated_at"));
             this.nodeId = (String) data.get("node_id");
             this.message = (String) data.get("body");
             this.htmlUrl = (String) data.get("html_url");
+            this.userLoginName = (String) ((JSONObject) data.get("user")).get("login");
         }
-        public Mono<GithubIssue> getIssue() {
-            return Mono.of(() -> {
+        public Task<GithubIssue> getIssue() {
+            return Task.of(() -> {
                 try {
-                    return new GithubIssue(c, (JSONObject) c.readJson((String)data.get("issue_url")).getData());
+                    return new GithubIssue(c, (JSONObject) c.readJson(new Endpoint(Endpoint.HttpMethod.GET, (String)data.get("issue_url"))).getData());
                 } catch (IOException e) {
                     return null;
                 }
             });
         }
-        public Mono<GithubUser> getUser() {
-            return Mono.of(() -> {
+        public Task<GithubUser> getUser() {
+            return Task.of(() -> {
                 try {
-                    return new GithubUser(c, (JSONObject) c.readJson((String) ((JSONObject) data.get("user")).get("url")).getData());
+                    return new GithubUser(c, (JSONObject) c.readJson(GithubEndpoints.USERS.fulfil("user", userLoginName)).getData());
                 } catch (IOException e) {
                     return null;
                 }
@@ -213,6 +220,24 @@ public class GithubIssue {
         }
         public Date getCreatedAt() {
             return this.createdAt;
+        }
+        public String getNodeId() {
+            return this.nodeId;
+        }
+        public String getMessage() {
+            return this.message;
+        }
+        public String getHtmlUrl() {
+            return this.htmlUrl;
+        }
+        public String getUserLoginName() {
+            return this.userLoginName;
+        }
+        public long getId() {
+            return this.id;
+        }
+        public long getUserId() {
+            return this.userId;
         }
     }
     public enum LockReason {

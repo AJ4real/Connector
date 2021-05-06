@@ -1,6 +1,6 @@
 package me.aj4real.connector.github.objects;
 
-import me.aj4real.connector.Mono;
+import me.aj4real.connector.Task;
 import me.aj4real.connector.paginators.Paginator;
 import me.aj4real.connector.github.GithubConnector;
 import me.aj4real.connector.github.GithubEndpoints;
@@ -32,12 +32,12 @@ public class GithubUser extends GithubPerson {
     public void listen() {
         c.getHandler().listen(new GithubPollingListener(c, c.getHandler(), ((String) data.get("events_url")).replace("{/privacy}", "")));
     }
-    public static Mono<Optional<GithubUser>> of(GithubPerson person) {
-        return Mono.of(() -> {
+    public static Task<Optional<GithubUser>> of(GithubPerson person) {
+        return Task.of(() -> {
             try {
-                return Optional.of(new GithubUser(person.c, (JSONObject) person.c.readJson((String) person.data.get("url")).getData()));
+                return Optional.of(new GithubUser(person.c, (JSONObject) person.c.readJson(GithubEndpoints.USERS.fulfil("user", person.getLoginName())).getData()));
             } catch (IOException e) {
-                e.printStackTrace();
+                me.aj4real.connector.Logger.handle(e);
                 return Optional.empty();
             }
         });
@@ -46,13 +46,13 @@ public class GithubUser extends GithubPerson {
         return Paginator.of((i) -> {
             try {
                 List<GithubRepository> repos = new ArrayList<GithubRepository>();
-                JSONArray arr = (JSONArray) c.readJson((String) data.get("subscriptions_url") + "?per_page=100&page=" + i).getData();
+                JSONArray arr = (JSONArray) c.readJson(GithubEndpoints.SUBSCRIBED_REPOSITORIES.fulfil("user", getLoginName()).addQuery("?per_page=100&page=" + i)).getData();
                 for(Object r : arr) {
                     repos.add(new GithubRepository(c, (JSONObject) r));
                 }
                 return repos;
             } catch (IOException e) {
-                e.printStackTrace();
+                me.aj4real.connector.Logger.handle(e);
             }
             return null;
         });
@@ -62,13 +62,13 @@ public class GithubUser extends GithubPerson {
         return Paginator.of((i) -> {
             try {
                 List<GithubRepository> repos = new ArrayList<GithubRepository>();
-                JSONArray arr = (JSONArray) c.readJson((String) data.get("starred_url") + "?per_page=100&page=" + i).getData();
+                JSONArray arr = (JSONArray) c.readJson(GithubEndpoints.STARRED_REPOSITORIES.fulfil("user", getLoginName()).addQuery("?per_page=100&page=" + i)).getData();
                 for(Object r : arr) {
                     repos.add(new GithubRepository(c, (JSONObject) r));
                 }
                 return repos;
             } catch (IOException e) {
-                e.printStackTrace();
+                me.aj4real.connector.Logger.handle(e);
             }
             return null;
         });
@@ -78,7 +78,7 @@ public class GithubUser extends GithubPerson {
         return Paginator.of((i) -> {
             List<GithubPerson> users = new ArrayList<GithubPerson>();
             try {
-                for(Object o : (JSONArray)c.readJson(((JSONObject)data).get("followers_url").toString().replace("{/other_user}", "") + "?per_page=100&page=" + i).getData()) {
+                for(Object o : (JSONArray)c.readJson(GithubEndpoints.FOLLOWERS.fulfil("user", getLoginName()).addQuery("?per_page=100&page=" + i)).getData()) {
                     users.add(new GithubPerson(c, (JSONObject)o));
                 }
             } catch (Exception err) {
@@ -88,10 +88,10 @@ public class GithubUser extends GithubPerson {
         });
     }
 
-    public Mono<Boolean> isFollowedBy(String name) {
-        return Mono.of(() -> {
+    public Task<Boolean> isFollowedBy(String name) {
+        return Task.of(() -> {
             try {
-                return c.readJson(GithubEndpoints.base + "/users/" + name + "/following/" + this.getLoginName()).getResponseCode() == 204;
+                return c.readJson(GithubEndpoints.FOLLOWERS.fulfil("user", getLoginName()).fulfil("other_user", name)).getResponseCode() == 204;
             } catch (Exception err) {
                 err.printStackTrace();
             }
@@ -103,8 +103,8 @@ public class GithubUser extends GithubPerson {
         return Paginator.of((i) -> {
             List<GithubPerson> users = new ArrayList<GithubPerson>();
             try {
-                for(Object o : (JSONArray)c.readJson(((JSONObject)data).get("following_url").toString().replace("{/other_user}", "") + "?per_page=100&page=" + i).getData()) {
-                    users.add(new GithubPerson(c, (JSONObject)o));
+                for (Object o : (JSONArray) c.readJson(GithubEndpoints.FOLLOWING.fulfil("user", getLoginName()).addQuery("?per_page=100&page=" + i)).getData()) {
+                    users.add(new GithubPerson(c, (JSONObject) o));
                 }
             } catch (Exception err) {
                 err.printStackTrace();
@@ -113,10 +113,10 @@ public class GithubUser extends GithubPerson {
         });
     }
 
-    public Mono<Boolean> isFollowing(String name) {
-        return Mono.of(() -> {
+    public Task<Boolean> isFollowing(String name) {
+        return Task.of(() -> {
             try {
-                return c.readJson(GithubEndpoints.base + "/users/" + this.getLoginName() + "/following/" + name).getResponseCode() == 204;
+                return c.readJson(GithubEndpoints.FOLLOWING.fulfil("user", getLoginName()).fulfil("other_user", name)).getResponseCode() == 204;
             } catch (Exception err) {
                 err.printStackTrace();
             }

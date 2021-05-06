@@ -1,6 +1,7 @@
 package me.aj4real.connector.github.specs;
 
 import me.aj4real.connector.Connector;
+import me.aj4real.connector.Endpoint;
 import me.aj4real.connector.Request;
 import org.json.simple.JSONObject;
 
@@ -8,8 +9,8 @@ public class ModifyOrganizationSpec extends Request {
     private String billingEmail, company, email, twitterUsername, location, name, description, repositoryPermissions, blog;
     private boolean hasOrganizationProjects, hasRepositoryProjects, membersCanCreateRepositories, membersCanCreateInternalRepositories, membersCanCreatePrivateRepositories, membersCanCreatePublicRepositories, membersCanCreatePages;
 
-    public ModifyOrganizationSpec(String url) {
-        super(url);
+    public ModifyOrganizationSpec(Endpoint endpoint) {
+        super(endpoint);
     }
 
     public void setBillingEmail(String value) {
@@ -82,10 +83,6 @@ public class ModifyOrganizationSpec extends Request {
             if (v == null) data.remove(k);
         });
         return data;
-    }
-    @Override
-    public Connector.REQUEST_METHOD getRequestMethod() {
-        return Connector.REQUEST_METHOD.PATCH;
     }
     public enum RepositoryPermissions {
         READ("read"),

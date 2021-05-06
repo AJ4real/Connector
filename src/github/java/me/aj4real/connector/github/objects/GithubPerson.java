@@ -1,9 +1,8 @@
 package me.aj4real.connector.github.objects;
 
-import me.aj4real.connector.Connector;
-import me.aj4real.connector.Mono;
+import me.aj4real.connector.Task;
+import me.aj4real.connector.github.GithubEndpoints;
 import me.aj4real.connector.github.paginatorconfigurations.ListRepositoriesPaginatorConfiguration;
-import me.aj4real.connector.github.paginatorconfigurations.ListRepositoryContributorsPaginatorConfiguration;
 import me.aj4real.connector.paginators.Paginator;
 import me.aj4real.connector.github.GithubConnector;
 import org.json.simple.JSONArray;
@@ -44,13 +43,13 @@ public class GithubPerson {
                 ListRepositoriesPaginatorConfiguration mutatedConfig = new ListRepositoriesPaginatorConfiguration(i);
                 config.accept(mutatedConfig);
                 List<GithubRepository> orgs = new ArrayList<GithubRepository>();
-                JSONArray arr = (JSONArray) c.readJson(data.get("repos_url") + mutatedConfig.buildQuery(), Connector.REQUEST_METHOD.GET).getData();
+                JSONArray arr = (JSONArray) c.readJson(GithubEndpoints.REPOSITORY.fulfil("owner", login).addQuery(mutatedConfig.buildQuery())).getData();
                 for (Object o1 : arr) {
                     orgs.add(new GithubRepository(c, (JSONObject) o1));
                 }
                 return orgs;
             } catch (IOException e) {
-                e.printStackTrace();
+                me.aj4real.connector.Logger.handle(e);
             }
             return null;
         });
@@ -60,22 +59,22 @@ public class GithubPerson {
 
     public boolean isOrganization() { return this.isOrganization; }
 
-    public Optional<Mono<GithubOrganization>> toOrganization() {
+    public Optional<Task<GithubOrganization>> toOrganization() {
         if (!isOrganization()) return Optional.empty();
-        return Optional.of(Mono.of(() -> {
+        return Optional.of(Task.of(() -> {
             try {
-                return new GithubOrganization(c, (JSONObject) c.readJson((String) data.get("url")).getData());
+                return new GithubOrganization(c, (JSONObject) c.readJson(GithubEndpoints.ORGANIZATIONS.fulfil("org", login)).getData());
             } catch (IOException e) {
                 return null;
             }
         }));
     }
 
-    public Optional<Mono<GithubUser>> toUser() {
+    public Optional<Task<GithubUser>> toUser() {
         if (!isUser()) return Optional.empty();
-        return Optional.of(Mono.of(() -> {
+        return Optional.of(Task.of(() -> {
             try {
-                return new GithubUser(c, (JSONObject) c.readJson((String) data.get("url")).getData());
+                return new GithubUser(c, (JSONObject) c.readJson(GithubEndpoints.USERS.fulfil("user", login)).getData());
             } catch (IOException e) {
                 return null;
             }

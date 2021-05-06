@@ -1,7 +1,7 @@
 package me.aj4real.connector.github.events;
 
-import me.aj4real.connector.Connector;
-import me.aj4real.connector.Mono;
+import me.aj4real.connector.Endpoint;
+import me.aj4real.connector.Task;
 import me.aj4real.connector.github.GithubConnector;
 import me.aj4real.connector.github.objects.GitCommit;
 import org.json.simple.JSONObject;
@@ -14,10 +14,10 @@ public class GithubIssueEvent extends GithubEvent {
         this.event = (String) data.get("event");
         this.commitId = (String) data.get("commit_id");
     }
-    public Mono<GitCommit> getCommit() {
-        return Mono.of(() -> {
+    public Task<GitCommit> getCommit() {
+        return Task.of(() -> {
             try {
-                return new GitCommit((GithubConnector) c, (JSONObject) c.readJson((String) data.get("commit_url")).getData());
+                return new GitCommit((GithubConnector) c, (JSONObject) c.readJson(new Endpoint(Endpoint.HttpMethod.GET, (String) data.get("commit_url"))).getData());
             } catch (Exception e) {
                 return null;
             }

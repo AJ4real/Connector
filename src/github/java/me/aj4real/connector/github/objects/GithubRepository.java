@@ -1,8 +1,8 @@
 package me.aj4real.connector.github.objects;
 
-import me.aj4real.connector.Connector;
-import me.aj4real.connector.Mono;
+import me.aj4real.connector.Task;
 import me.aj4real.connector.github.GithubApiPreviews;
+import me.aj4real.connector.github.GithubEndpoints;
 import me.aj4real.connector.github.events.GithubPollingListener;
 import me.aj4real.connector.github.paginatorconfigurations.ListBranchesPaginatorConfiguration;
 import me.aj4real.connector.github.paginatorconfigurations.ListRepositoryContributorsPaginatorConfiguration;
@@ -51,12 +51,12 @@ public class GithubRepository {
         this.hasPages = (boolean) data.get("has_pages");
         this.isPrivate = (boolean) data.get("private");
     }
-    public Mono<Branch> getBranch(String name) {
-        return Mono.of(() -> {
+    public Task<Branch> getBranch(String name) {
+        return Task.of(() -> {
             try {
-                return new Branch(c, (JSONObject) c.readJson(((String) data.get("branches_url")).replace("{/branch}", "/" + name)).getData());
+                return new Branch(c, (JSONObject) c.readJson(GithubEndpoints.LIST_REPOSITORY_BRANCHES.fulfil("owner", ownerLoginName).fulfil("repo", name).fulfil("branch", name)).getData());
             } catch (IOException e) {
-                e.printStackTrace();
+                me.aj4real.connector.Logger.handle(e);
                 return null;
             }
         });
@@ -70,12 +70,12 @@ public class GithubRepository {
             try {
                 ListBranchesPaginatorConfiguration mutatedConfig = new ListBranchesPaginatorConfiguration(i);
                 config.accept(mutatedConfig);
-                JSONArray arr = (JSONArray) c.readJson(((String) data.get("branches_url")).replace("{/number}", "") + mutatedConfig.buildQuery()).getData();
+                JSONArray arr = (JSONArray) c.readJson(GithubEndpoints.LIST_REPOSITORY_BRANCHES.fulfil("owner", ownerLoginName).fulfil("repo", name).addQuery(mutatedConfig.buildQuery())).getData();
                 for(Object o : arr) {
                     names.add((String) ((JSONObject) o).get("name"));
                 }
             } catch (IOException e) {
-                e.printStackTrace();
+                me.aj4real.connector.Logger.handle(e);
             }
             return names;
         });
@@ -83,47 +83,47 @@ public class GithubRepository {
     public void listen() {
         c.getHandler().listen(new GithubPollingListener(c, c.getHandler(), ((String) data.get("events_url"))));
     }
-    public Mono<GithubRepository> transfer(String newOwner) {
-        return Mono.of(() -> {
+    public Task<GithubRepository> transfer(String newOwner) {
+        return Task.of(() -> {
             try {
                 JSONObject o = new JSONObject();
                 o.put("new_owner", newOwner);
-                return new GithubRepository(c, (JSONObject) c.readJson(data.get("url") + "/transfer", Connector.REQUEST_METHOD.POST, o.toString()).getData());
+                return new GithubRepository(c, (JSONObject) c.readJson(GithubEndpoints.TRANSFER_REPOSITORY.fulfil("owner", ownerLoginName).fulfil("repo", name), o.toString()).getData());
             } catch (Exception e) {
-                e.printStackTrace();
+                me.aj4real.connector.Logger.handle(e);
                 return null;
             }
         });
     }
-    public Mono<GithubRepository> transfer(GithubPerson p) {
+    public Task<GithubRepository> transfer(GithubPerson p) {
         return transfer(p.getLoginName());
     }
-    public Mono<Boolean> isVulnerabilityAlertsEnabled() {
-        return Mono.of(() -> {
+    public Task<Boolean> isVulnerabilityAlertsEnabled() {
+        return Task.of(() -> {
             try {
-                return c.readJson(data.get("url") + "/vulnerability-alerts", Connector.REQUEST_METHOD.DELETE, null, GithubApiPreviews.ENABLE_DISABLE_VULNERABILITY_ALERTS).getResponseCode() == 204;
+                return c.readJson(GithubEndpoints.REPOSITORY_VULNERABILITY_ALERTS.fulfil("owner", ownerLoginName).fulfil("repo", name)).getResponseCode() == 204;
             } catch (Exception e) {
-                e.printStackTrace();
+                me.aj4real.connector.Logger.handle(e);
                 return null;
             }
         });
     }
-    public Mono<Integer> disableVulnerabilityAlerts() {
-        return Mono.of(() -> {
+    public Task<Integer> disableVulnerabilityAlerts() {
+        return Task.of(() -> {
             try {
-                return c.readJson(data.get("url") + "/vulnerability-alerts", Connector.REQUEST_METHOD.DELETE, null, GithubApiPreviews.ENABLE_DISABLE_VULNERABILITY_ALERTS).getResponseCode();
+                return c.readJson(GithubEndpoints.DISABLE_REPOSITORY_VULNERABILITY_ALERTS.fulfil("owner", ownerLoginName).fulfil("repo", name), GithubApiPreviews.ENABLE_DISABLE_VULNERABILITY_ALERTS).getResponseCode();
             } catch (Exception e) {
-                e.printStackTrace();
+                me.aj4real.connector.Logger.handle(e);
                 return -1;
             }
         });
     }
-    public Mono<Integer> enableVulnerabilityAlerts() {
-        return Mono.of(() -> {
+    public Task<Integer> enableVulnerabilityAlerts() {
+        return Task.of(() -> {
             try {
-                return c.readJson(data.get("url") + "/vulnerability-alerts", Connector.REQUEST_METHOD.POST, null, GithubApiPreviews.ENABLE_DISABLE_VULNERABILITY_ALERTS).getResponseCode();
+                return c.readJson(GithubEndpoints.ENABLE_REPOSITORY_VULNERABILITY_ALERTS.fulfil("owner", ownerLoginName).fulfil("repo", name), GithubApiPreviews.ENABLE_DISABLE_VULNERABILITY_ALERTS).getResponseCode();
             } catch (Exception e) {
-                e.printStackTrace();
+                me.aj4real.connector.Logger.handle(e);
                 return -1;
             }
         });
@@ -137,21 +137,21 @@ public class GithubRepository {
             try {
                 ListRepositoryIssuesPaginatorConfiguration mutatedConfig = new ListRepositoryIssuesPaginatorConfiguration(i);
                 config.accept(mutatedConfig);
-                JSONArray arr = (JSONArray) c.readJson(((String) data.get("issues_url")).replace("{/number}", "") + mutatedConfig.buildQuery()).getData();
+                JSONArray arr = (JSONArray) c.readJson(GithubEndpoints.LIST_REPOSITORY_ISSUES.fulfil("owner", ownerLoginName).fulfil("repo", name).addQuery(mutatedConfig.buildQuery())).getData();
                 for(Object o : arr) {
                     commits.add(new GithubIssue(c, (JSONObject) o));
                 }
             } catch (IOException e) {
-                e.printStackTrace();
+                me.aj4real.connector.Logger.handle(e);
             }
             return commits;
         });
     }
-    public Mono<Map<String,Long>> getLanguages() {
-        return Mono.of(() -> {
+    public Task<Map<String,Long>> getLanguages() {
+        return Task.of(() -> {
             try {
                 Map<String,Long> map = new HashMap<String,Long>();
-                JSONObject o = (JSONObject) c.readJson((String) data.get("languages_url")).getData();
+                JSONObject o = (JSONObject) c.readJson(GithubEndpoints.LIST_REPOSITORY_LANGUAGES.fulfil("owner", ownerLoginName).fulfil("repo", name)).getData();
                 for (Object k : o.keySet()) {
                     String key = (String) k;
                     if(o.get(key) instanceof Long) {
@@ -161,22 +161,22 @@ public class GithubRepository {
                 }
                 return map;
             } catch (Exception e) {
-                e.printStackTrace();
+                me.aj4real.connector.Logger.handle(e);
             }
             return null;
         });
     }
-    public Mono<List<String>> getTopics() {
-        return Mono.of(() -> {
+    public Task<List<String>> getTopics() {
+        return Task.of(() -> {
             try {
-                JSONArray arr = (JSONArray) ((JSONObject) c.readJson(data.get("url") + "/topics", Connector.REQUEST_METHOD.GET, null, GithubApiPreviews.REPOSITORY_TOPICS).getData()).get("names");
+                JSONArray arr = (JSONArray) c.readJson(GithubEndpoints.LIST_REPOSITORY_TOPICS.fulfil("owner", ownerLoginName).fulfil("repo", name)).getData();
                 List<String> topics = new ArrayList<>();
                 for (Object o1 : arr) {
                     topics.add((String) o1);
                 }
                 return topics;
             } catch (Exception e) {
-                e.printStackTrace();
+                me.aj4real.connector.Logger.handle(e);
             }
             return new ArrayList<>();
         });
@@ -190,12 +190,13 @@ public class GithubRepository {
             try {
                 Paginator.Configuration mutatedConfig = new Paginator.Configuration(i);
                 config.accept(mutatedConfig);
-                JSONArray arr = (JSONArray) c.readJson(((String) data.get("issue_comment_url")).replace("{/number}", "") + mutatedConfig.buildQuery()).getData();
+
+                JSONArray arr = (JSONArray) c.readJson(GithubEndpoints.LIST_REPOSITORY_ISSUE_COMMENTS.fulfil("owner", ownerLoginName).fulfil("repo", name).addQuery(mutatedConfig.buildQuery())).getData();
                 for(Object o : arr) {
                     commits.add(new GithubIssue.Comment(c, (JSONObject) o));
                 }
             } catch (IOException e) {
-                e.printStackTrace();
+                me.aj4real.connector.Logger.handle(e);
             }
             return commits;
         });
@@ -209,12 +210,12 @@ public class GithubRepository {
             try {
                 Paginator.Configuration mutatedConfig = new Paginator.Configuration(i);
                 config.accept(mutatedConfig);
-                JSONArray arr = (JSONArray) c.readJson(((String) data.get("commits_url")).replace("{/sha}", "") + mutatedConfig.buildQuery()).getData();
+                JSONArray arr = (JSONArray) c.readJson(GithubEndpoints.LIST_REPOSITORY_COMMITS.fulfil("owner", ownerLoginName).fulfil("repo", name).addQuery(mutatedConfig.buildQuery())).getData();
                 for(Object o : arr) {
                     commits.add(new GitCommit(c, (JSONObject) o));
                 }
             } catch (IOException e) {
-                e.printStackTrace();
+                me.aj4real.connector.Logger.handle(e);
             }
             return commits;
         });
@@ -226,31 +227,31 @@ public class GithubRepository {
         return Paginator.of((i) -> {
             ListRepositoryContributorsPaginatorConfiguration mutatedConfig = new ListRepositoryContributorsPaginatorConfiguration(i);
             config.accept(mutatedConfig);
-            List<GithubPerson> commits = new ArrayList<>();
+            List<GithubPerson> contributors = new ArrayList<>();
             try {
-                JSONArray arr = (JSONArray) c.readJson(((String) data.get("contributors_url")) + mutatedConfig.buildQuery()).getData();
+                JSONArray arr = (JSONArray) c.readJson(GithubEndpoints.LIST_REPOSITORY_CONTRIBUTORS.fulfil("owner", ownerLoginName).fulfil("repo", name).addQuery(mutatedConfig.buildQuery())).getData();
                 for(Object o : arr) {
-                    commits.add(new GithubPerson(c, (JSONObject) o));
+                    contributors.add(new GithubPerson(c, (JSONObject) o));
                 }
             } catch (IOException e) {
-                e.printStackTrace();
+                me.aj4real.connector.Logger.handle(e);
             }
-            return commits;
+            return contributors;
         });
     }
-    public Mono<GithubPerson> getOwner() {
-        return Mono.of(() -> {
+    public Task<GithubPerson> getOwner() {
+        return Task.of(() -> {
             try {
-                return new GithubPerson(c, (JSONObject) c.readJson((String) ((JSONObject) data.get("owner")).get("url")).getData());
+                return new GithubPerson(c, (JSONObject) c.readJson(GithubEndpoints.USERS.fulfil("user", ownerLoginName)).getData());
             } catch (IOException e) {
-                e.printStackTrace();
+                me.aj4real.connector.Logger.handle(e);
                 return null;
             }
         });
     }
-    public Mono<GithubRepository> modify(final Consumer<? super ModifyRepositorySpec> spec) {
-        return Mono.of(() -> {
-            ModifyRepositorySpec mutatedSpec = new ModifyRepositorySpec((String) data.get("url"));
+    public Task<GithubRepository> modify(final Consumer<? super ModifyRepositorySpec> spec) {
+        return Task.of(() -> {
+            ModifyRepositorySpec mutatedSpec = new ModifyRepositorySpec(GithubEndpoints.MODIFY_REPOSITORY.fulfil("owner", ownerLoginName).fulfil("repo", name));
             spec.accept(mutatedSpec);
             try {
                 Response r = c.sendRequest(mutatedSpec);
@@ -260,14 +261,14 @@ public class GithubRepository {
                     //TODO throw response code exception
                 }
             } catch (IOException e) {
-                e.printStackTrace();
+                me.aj4real.connector.Logger.handle(e);
             }
             return null;
         });
     }
-    public Mono<GithubIssue> createIssue(final Consumer<? super CreateIssueSpec> spec) {
-        return Mono.of(() -> {
-            CreateIssueSpec mutatedSpec = new CreateIssueSpec(((String) data.get("issues_url")).replace("{/number}", ""));
+    public Task<GithubIssue> createIssue(final Consumer<? super CreateIssueSpec> spec) {
+        return Task.of(() -> {
+            CreateIssueSpec mutatedSpec = new CreateIssueSpec(GithubEndpoints.CREATE_REPOSITORY_ISSUE.fulfil("owner", ownerLoginName).fulfil("repo", name));
             spec.accept(mutatedSpec);
             try {
                 Response r = c.sendRequest(mutatedSpec);
@@ -277,37 +278,37 @@ public class GithubRepository {
                     //TODO throw response code exception
                 }
             } catch (IOException e) {
-                e.printStackTrace();
+                me.aj4real.connector.Logger.handle(e);
             }
             return null;
         });
     }
-    public Mono<Integer> delete() {
-        return Mono.of(() -> {
+    public Task<Integer> delete() {
+        return Task.of(() -> {
             try {
-                return c.readJson((String) data.get("url"), Connector.REQUEST_METHOD.DELETE).getResponseCode();
+                return c.readJson(GithubEndpoints.DELETE_REPOSITORY.fulfil("owner", ownerLoginName).fulfil("repo", name)).getResponseCode();
             } catch (IOException e) {
-                e.printStackTrace();
+                me.aj4real.connector.Logger.handle(e);
                 return -1;
             }
         });
     }
-    public Mono<Integer> enableAutomatedSecurityFixes() {
-        return Mono.of(() -> {
+    public Task<Integer> enableAutomatedSecurityFixes() {
+        return Task.of(() -> {
             try {
-                return c.readJson(data.get("url") + "/automated-security-fixes", Connector.REQUEST_METHOD.PUT, null, GithubApiPreviews.ENABLE_DISABLE_AUTOMATIC_SECURITY_FIXES).getResponseCode();
+                return c.readJson(GithubEndpoints.ENABLE_AUTOMATED_SECURITY_FIXES.fulfil("owner", ownerLoginName).fulfil("repo", name), GithubApiPreviews.ENABLE_DISABLE_AUTOMATIC_SECURITY_FIXES).getResponseCode();
             } catch (IOException e) {
-                e.printStackTrace();
+                me.aj4real.connector.Logger.handle(e);
                 return -1;
             }
         });
     }
-    public Mono<Integer> disableAutomatedSecurityFixes() {
-        return Mono.of(() -> {
+    public Task<Integer> disableAutomatedSecurityFixes() {
+        return Task.of(() -> {
             try {
-                return c.readJson(data.get("url") + "/automated-security-fixes", Connector.REQUEST_METHOD.DELETE, null, GithubApiPreviews.ENABLE_DISABLE_AUTOMATIC_SECURITY_FIXES).getResponseCode();
+                return c.readJson(GithubEndpoints.DISABLE_AUTOMATED_SECURITY_FIXES.fulfil("owner", ownerLoginName).fulfil("repo", name), GithubApiPreviews.ENABLE_DISABLE_AUTOMATIC_SECURITY_FIXES).getResponseCode();
             } catch (IOException e) {
-                e.printStackTrace();
+                me.aj4real.connector.Logger.handle(e);
                 return -1;
             }
         });
@@ -396,10 +397,10 @@ public class GithubRepository {
             return this.sha;
         }
         public GithubPerson getOwner() {
-            return new GithubPerson(c, (JSONObject) data.get("user"));
+            return new GithubPerson(c, (JSONObject) data.get("github/user"));
         }
         public GithubRepository getRepository() {
-            return new GithubRepository(c, (JSONObject) data.get("repo"));
+            return new GithubRepository(c, (JSONObject) data.get("github/repo"));
         }
         public static class Protection {
             protected final JSONObject data;

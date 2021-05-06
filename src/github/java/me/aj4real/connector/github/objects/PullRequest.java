@@ -1,7 +1,8 @@
 package me.aj4real.connector.github.objects;
 
-import me.aj4real.connector.Connector;
-import me.aj4real.connector.Mono;
+import me.aj4real.connector.Endpoint;
+import me.aj4real.connector.Task;
+import me.aj4real.connector.github.GithubEndpoints;
 import me.aj4real.connector.paginators.Paginator;
 import me.aj4real.connector.github.GithubConnector;
 import org.json.simple.JSONArray;
@@ -116,20 +117,20 @@ public class PullRequest {
         if(data.get("milestone") == null) return Optional.empty();
         return Optional.of(new Milestone(c, (JSONObject) data.get("milestone")));
     }
-    public Mono<GithubUser> getUser() {
-        return Mono.of(() -> {
+    public Task<GithubUser> getUser() {
+        return Task.of(() -> {
             try {
-                return new GithubUser(c, (JSONObject) c.readJson((String) ((JSONObject) data.get("user")).get("url")).getData());
+                return new GithubUser(c, (JSONObject) c.readJson(GithubEndpoints.USERS.fulfil("user", (String) ((JSONObject) data.get("user")).get("login"))).getData());
             } catch (IOException e) {
                 return null;
             }
         });
     }
-    public Optional<Mono<GithubUser>> getAssignee() {
+    public Optional<Task<GithubUser>> getAssignee() {
         if (data.get("assignee") == null) return Optional.empty();
-        return Optional.of(Mono.of(() -> {
+        return Optional.of(Task.of(() -> {
             try {
-                return new GithubUser(c, (JSONObject) c.readJson((String) ((JSONObject) data.get("assignee")).get("url")).getData());
+                return new GithubUser(c, (JSONObject) c.readJson(GithubEndpoints.USERS.fulfil("user", (String) ((JSONObject) data.get("assignee")).get("login"))).getData());
             } catch (IOException e) {
                 return null;
             }
@@ -151,7 +152,7 @@ public class PullRequest {
                 assignees.add(new GithubPerson(c, (JSONObject) o));
             }
         } catch(Exception e) {
-            e.printStackTrace();
+            me.aj4real.connector.Logger.handle(e);
         }
         return assignees;
     }
@@ -163,7 +164,7 @@ public class PullRequest {
                 assignees.add(new GithubPerson(c, (JSONObject) o));
             }
         } catch(Exception e) {
-            e.printStackTrace();
+            me.aj4real.connector.Logger.handle(e);
         }
         return assignees;
     }
@@ -172,12 +173,12 @@ public class PullRequest {
         return Paginator.of((i) -> {
             List<GitCommit> commits = new ArrayList<>();
             try {
-                JSONArray arr = (JSONArray) c.readJson(((String) data.get("commits_url")) + "?per_page=100&page=" + i).getData();
+                JSONArray arr = (JSONArray) c.readJson(new Endpoint(Endpoint.HttpMethod.GET, (String) data.get("commits_url")).addQuery("?per_page=100&page=" + i)).getData();
                 for(Object o : arr) {
                     commits.add(new GitCommit(c, (JSONObject) o));
                 }
             } catch (IOException e) {
-                e.printStackTrace();
+                me.aj4real.connector.Logger.handle(e);
             }
             return commits;
         });
@@ -185,7 +186,7 @@ public class PullRequest {
     public Optional<GithubIssue> getIssue() {
         if(data.get("issue_url") == null) return Optional.empty();
         try {
-            return Optional.of(new GithubIssue(c, (JSONObject) c.readJson((String) data.get("issue_url")).getData()));
+            return Optional.of(new GithubIssue(c, (JSONObject) c.readJson(new Endpoint(Endpoint.HttpMethod.GET, (String) data.get("issue_url"))).getData()));
         } catch (IOException e) {
             return Optional.empty();
         }
@@ -240,14 +241,14 @@ public class PullRequest {
             return this.submittedAt;
         }
         public GithubPerson getUser() {
-            return new GithubPerson(c, (JSONObject) data.get("user"));
+            return new GithubPerson(c, (JSONObject) data.get("github/user"));
         }
-        public Mono<PullRequest> getPullRequest() {
-            return Mono.of(() -> {
+        public Task<PullRequest> getPullRequest() {
+            return Task.of(() -> {
                 try {
-                    return new PullRequest(c, (JSONObject) c.readJson((String) data.get("pull_request_url")).getData());
+                    return new PullRequest(c, (JSONObject) c.readJson(new Endpoint(Endpoint.HttpMethod.GET, (String) data.get("pull_request_url"))).getData());
                 } catch (Exception e) {
-                    e.printStackTrace();
+                    me.aj4real.connector.Logger.handle(e);
                     return null;
                 }
             });
@@ -256,12 +257,12 @@ public class PullRequest {
             return Paginator.of((i) -> {
                 List<Comment> commits = new ArrayList<>();
                 try {
-                    JSONArray arr = (JSONArray) c.readJson(((String) data.get("pull_request_url")) + "/reviews/" + this.id + "/comments" + "?per_page=100&page=" + i).getData();
+                    JSONArray arr = (JSONArray) c.readJson(new Endpoint(Endpoint.HttpMethod.GET, ((String) data.get("pull_request_url"))+ "/reviews/" + this.id + "/comments").addQuery("?per_page=100&page=" + i)).getData();
                     for(Object o : arr) {
                         commits.add(new Comment(c, (JSONObject) o));
                     }
                 } catch (IOException e) {
-                    e.printStackTrace();
+                    me.aj4real.connector.Logger.handle(e);
                 }
                 return commits;
             });
@@ -362,45 +363,45 @@ public class PullRequest {
                 if (data.get("start_side") == null) return Optional.empty();
                 return Optional.of(Side.valueOf(((String) data.get("start_side")).toUpperCase()));
             }
-            public Mono<Comment> refresh() {
-                return Mono.of(() -> {
+            public Task<Comment> refresh() {
+                return Task.of(() -> {
                     try {
-                        return new Comment(c, (JSONObject) c.readJson((String) data.get("url")).getData());
+                        return new Comment(c, (JSONObject) c.readJson(new Endpoint(Endpoint.HttpMethod.GET, (String) data.get("url"))).getData());
                     } catch (Exception e) {
-                        e.printStackTrace();
+                        me.aj4real.connector.Logger.handle(e);
                         return null;
                     }
                 });
             }
-            public Mono<GithubUser> getUser() {
-                return Mono.of(() -> {
+            public Task<GithubUser> getUser() {
+                return Task.of(() -> {
                     try {
-                        return new GithubUser(c, (JSONObject) c.readJson((String) ((JSONObject) data.get("user")).get("url")).getData());
+                        return new GithubUser(c, (JSONObject) c.readJson(new Endpoint(Endpoint.HttpMethod.GET, (String) ((JSONObject) data.get("user")).get("url"))).getData());
                     } catch (Exception e) {
-                        e.printStackTrace();
+                        me.aj4real.connector.Logger.handle(e);
                         return null;
                     }
                 });
             }
-            public Mono<PullRequest> getPullRequest() {
-                return Mono.of(() -> {
+            public Task<PullRequest> getPullRequest() {
+                return Task.of(() -> {
                     try {
-                        return new PullRequest(c, (JSONObject) c.readJson((String) data.get("pull_request_url")).getData());
+                        return new PullRequest(c, (JSONObject) c.readJson(new Endpoint(Endpoint.HttpMethod.GET, (String) data.get("pull_request_url"))).getData());
                     } catch (Exception e) {
-                        e.printStackTrace();
+                        me.aj4real.connector.Logger.handle(e);
                         return null;
                     }
                 });
             }
-            public Mono<Comment> update(String body) {
-                return Mono.of(() -> {
+            public Task<Comment> update(String body) {
+                return Task.of(() -> {
                     JSONObject o = new JSONObject();
                     o.put("body", body);
                     try {
-                        JSONObject response = (JSONObject) c.readJson((String) data.get("url"), Connector.REQUEST_METHOD.PATCH, o.toString()).getData();
+                        JSONObject response = (JSONObject) c.readJson(new Endpoint(Endpoint.HttpMethod.PATCH, (String) data.get("url")), o.toString()).getData();
                         return new Comment(c, response);
                     } catch (IOException e) {
-                        e.printStackTrace();
+                        me.aj4real.connector.Logger.handle(e);
                         return null;
                     }
                 });

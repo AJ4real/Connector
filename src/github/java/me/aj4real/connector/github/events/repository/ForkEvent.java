@@ -1,7 +1,8 @@
 package me.aj4real.connector.github.events.repository;
 
-import me.aj4real.connector.Mono;
+import me.aj4real.connector.Task;
 import me.aj4real.connector.github.GithubConnector;
+import me.aj4real.connector.github.GithubEndpoints;
 import me.aj4real.connector.github.events.GithubRepositoryEvent;
 import me.aj4real.connector.github.objects.GithubOrganization;
 import me.aj4real.connector.github.objects.GithubRepository;
@@ -19,15 +20,23 @@ public class ForkEvent extends GithubRepositoryEvent {
     public GithubRepository getFork() {
         return this.fork;
     }
-    public Optional<Mono<GithubOrganization>> getOrganization() {
+    public Optional<Task<GithubOrganization>> getOrganization() {
         if (!data.containsKey("org")) return Optional.empty();
-        return Optional.of(Mono.of(() -> {
+        return Optional.of(Task.of(() -> {
             try {
-                return new GithubOrganization((GithubConnector) c, (JSONObject) c.readJson((String) ((JSONObject) data.get("org")).get("url")).getData());
+                return new GithubOrganization((GithubConnector) c, (JSONObject) c.readJson(GithubEndpoints.ORGANIZATIONS.fulfil("org", getOrganizationName().get())).getData());
             } catch (IOException e) {
-                e.printStackTrace();
+                me.aj4real.connector.Logger.handle(e);
                 return null;
             }
         }));
+    }
+    public Optional<String> getOrganizationName() {
+        if (!data.containsKey("org")) return Optional.empty();
+        return Optional.of((String) ((JSONObject) data.get("org")).get("login"));
+    }
+    public Optional<Long> getOrganizationId() {
+        if (!data.containsKey("org")) return Optional.empty();
+        return Optional.of((Long) ((JSONObject) data.get("org")).get("id"));
     }
 }

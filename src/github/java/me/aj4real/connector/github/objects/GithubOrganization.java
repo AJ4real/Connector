@@ -1,9 +1,9 @@
 package me.aj4real.connector.github.objects;
 
-import me.aj4real.connector.Connector;
-import me.aj4real.connector.Mono;
+import me.aj4real.connector.Task;
 import me.aj4real.connector.Response;
 import me.aj4real.connector.github.GithubConnector;
+import me.aj4real.connector.github.GithubEndpoints;
 import me.aj4real.connector.github.events.GithubPollingListener;
 import me.aj4real.connector.paginators.Paginator;
 import me.aj4real.connector.github.specs.CreateOrganizationRepositorySpec;
@@ -23,9 +23,9 @@ public class GithubOrganization extends GithubPerson {
         this.desc = (String) data.get("description");
     }
 
-    public Mono<GithubRepository> createRepository(final Consumer<? super CreateOrganizationRepositorySpec> spec) {
-        return Mono.of(() -> {
-            CreateOrganizationRepositorySpec mutatedSpec = new CreateOrganizationRepositorySpec((String) data.get("repos_url"));
+    public Task<GithubRepository> createRepository(final Consumer<? super CreateOrganizationRepositorySpec> spec) {
+        return Task.of(() -> {
+            CreateOrganizationRepositorySpec mutatedSpec = new CreateOrganizationRepositorySpec(GithubEndpoints.CREATE_ORGANIZATION_REPOSITORY.fulfil("org", getLoginName()));
             spec.accept(mutatedSpec);
             try {
                 Response r = c.sendRequest(mutatedSpec);
@@ -33,7 +33,7 @@ public class GithubOrganization extends GithubPerson {
                     return new GithubRepository(c, (JSONObject) r.getData());
                 }
             } catch (IOException e) {
-                e.printStackTrace();
+                me.aj4real.connector.Logger.handle(e);
             }
             return null;
         });
@@ -43,9 +43,9 @@ public class GithubOrganization extends GithubPerson {
         c.getHandler().listen(new GithubPollingListener(c, c.getHandler(), ((String) data.get("events_url"))));
     }
 
-    public Mono<GithubOrganization> edit(final Consumer<? super ModifyOrganizationSpec> spec) {
-        return Mono.of(() -> {
-            ModifyOrganizationSpec mutatedSpec = new ModifyOrganizationSpec((String) data.get("url"));
+    public Task<GithubOrganization> edit(final Consumer<? super ModifyOrganizationSpec> spec) {
+        return Task.of(() -> {
+            ModifyOrganizationSpec mutatedSpec = new ModifyOrganizationSpec(GithubEndpoints.ORGANIZATIONS.fulfil("org", getLoginName()));
             spec.accept(mutatedSpec);
             try {
                 Response r = c.sendRequest(mutatedSpec);
@@ -53,16 +53,16 @@ public class GithubOrganization extends GithubPerson {
                     return new GithubOrganization(c, (JSONObject) r.getData());
                 }
             } catch (IOException e) {
-                e.printStackTrace();
+                me.aj4real.connector.Logger.handle(e);
             }
             return null;
         });
     }
 
-    public Mono<GithubOrganization> refresh() {
-        return Mono.of(() -> {
+    public Task<GithubOrganization> refresh() {
+        return Task.of(() -> {
             try {
-                return new GithubOrganization(c, (JSONObject) c.readJson((String) data.get("url")).getData());
+                return new GithubOrganization(c, (JSONObject) c.readJson(GithubEndpoints.ORGANIZATIONS.fulfil("org", getLoginName())).getData());
             } catch (IOException e) {}
             return null;
         });
@@ -72,7 +72,7 @@ public class GithubOrganization extends GithubPerson {
         return Paginator.of((i) -> {
             try {
                 List<GithubPerson> members = new ArrayList<GithubPerson>();
-                JSONArray arr = (JSONArray) c.readJson(((String) data.get("organizations_url")).replace("{/member}", "") + "?per_page=100&page=" + i, Connector.REQUEST_METHOD.GET).getData();
+                JSONArray arr = (JSONArray) c.readJson(GithubEndpoints.ORGANIZATION_PUBLIC_MEMBERS.fulfil("org", getLoginName()).addQuery("?per_page=100&page=" + i)).getData();
                 for(Object r : arr) {
                     members.add(new GithubPerson(c, (JSONObject) r));
                 }
@@ -82,11 +82,11 @@ public class GithubOrganization extends GithubPerson {
         });
     }
 
-    public Mono<List<GithubPerson>> getMembers() {
-        return Mono.of(() -> {
+    public Paginator<List<GithubPerson>> getMembers() {
+        return Paginator.of((i) -> {
             try {
                 List<GithubPerson> members = new ArrayList<GithubPerson>();
-                JSONArray arr = (JSONArray) c.readJson(((String) data.get("members_url")).replace("{/member}", "")).getData();
+                JSONArray arr = (JSONArray) c.readJson(GithubEndpoints.ORGANIZATION_MEMBERS.fulfil("org", getLoginName()).addQuery("?per_page=100&page" + i)).getData();
                 for(Object r : arr) {
                     members.add(new GithubPerson(c, (JSONObject) r));
                 }
@@ -95,11 +95,11 @@ public class GithubOrganization extends GithubPerson {
             return null;
         });
     }
-    public Mono<List<GithubHook>> getHooks() {
-        return Mono.of(() -> {
+    public Task<List<GithubHook>> getHooks() {
+        return Task.of(() -> {
             try {
                 List<GithubHook> hooks = new ArrayList<>();
-                JSONArray arr = (JSONArray) c.readJson((String) data.get("hooks_url")).getData();
+                JSONArray arr = (JSONArray) c.readJson(GithubEndpoints.ORGANIZATION_HOOKS.fulfil("org", getLoginName())).getData();
                 for (Object h : arr) {
                     hooks.add(new GithubHook(c, (JSONObject) h));
                 }

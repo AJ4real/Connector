@@ -32,7 +32,7 @@ public class Util {
 		try {
 			data = new String(Files.readAllBytes(file.toPath()));
 		} catch (IOException e) {
-			e.printStackTrace();
+			me.aj4real.connector.Logger.handle(e);
 		}
 		return data;
 	}

@@ -1,7 +1,8 @@
 package me.aj4real.connector.github.events.repository;
 
-import me.aj4real.connector.Mono;
+import me.aj4real.connector.Task;
 import me.aj4real.connector.github.GithubConnector;
+import me.aj4real.connector.github.GithubEndpoints;
 import me.aj4real.connector.github.events.GithubRepositoryEvent;
 import me.aj4real.connector.github.objects.GithubUser;
 import org.json.simple.JSONObject;
@@ -15,13 +16,12 @@ public class MemberEvent extends GithubRepositoryEvent {
         super(c, data);
         this.action = Action.valueOf((String) ((JSONObject)data.get("payload")).get("action"));
     }
-    public Mono<GithubUser> getMember() {
-        return Mono.of(() -> {
-
+    public Task<GithubUser> getMember() {
+        return Task.of(() -> {
             try {
-                return new GithubUser((GithubConnector) c, (JSONObject) c.readJson((String) ((JSONObject) data.get("member")).get("url")).getData());
+                return new GithubUser((GithubConnector) c, (JSONObject) c.readJson(GithubEndpoints.USERS.fulfil("user", (String) ((JSONObject) data.get("member")).get("login"))).getData());
             } catch (IOException e) {
-                e.printStackTrace();
+                me.aj4real.connector.Logger.handle(e);
                 return null;
             }
         });

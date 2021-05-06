@@ -1,5 +1,6 @@
 package me.aj4real.connector.github.events.repository;
 
+import me.aj4real.connector.Endpoint;
 import me.aj4real.connector.paginators.Paginator;
 import me.aj4real.connector.github.GithubConnector;
 import me.aj4real.connector.github.events.GithubRepositoryEvent;
@@ -40,9 +41,9 @@ public class PushEvent extends GithubRepositoryEvent {
         return Paginator.of((i) -> {
             JSONArray commitsRaw = (JSONArray)((JSONObject) data.get("payload")).get("commits");
             try {
-                return new GitCommit((GithubConnector) c, (JSONObject) c.readJson((String) ((JSONObject)commitsRaw.get(i)).get("url")).getData());
+                return new GitCommit((GithubConnector) c, (JSONObject) c.readJson(new Endpoint(Endpoint.HttpMethod.GET, (String) ((JSONObject)commitsRaw.get(i.intValue())).get("url"))).getData());
             } catch (IOException e) {
-                e.printStackTrace();
+                me.aj4real.connector.Logger.handle(e);
                 return null;
             }
         });

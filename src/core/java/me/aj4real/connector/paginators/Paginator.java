@@ -1,5 +1,7 @@
 package me.aj4real.connector.paginators;
 
+import me.aj4real.connector.discord.pagInatorconfigurations.ListGuildMembersPaginatorConfiguration;
+
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -8,12 +10,12 @@ import java.util.function.Consumer;
 import java.util.function.Function;
 
 public class Paginator<T> {
-    private final Function<Integer, T> returnValue;
-    private int page = 0;
-    private Paginator(Function<Integer, T> returnValue) {
+    private final Function<Long, T> returnValue;
+    private long page = 0;
+    private Paginator(Function<Long, T> returnValue) {
         this.returnValue = returnValue;
     }
-    public static <T> Paginator<T> of(Function<Integer, T> returnValue) {
+    public static <T> Paginator<T> of(Function<Long, T> returnValue) {
         return new Paginator(returnValue);
     }
     public T next() {
@@ -24,7 +26,7 @@ public class Paginator<T> {
         page = page + number;
     }
     public static class Configuration {
-        public static final Consumer<? super Configuration> DEFAULT = (c) -> c.setEntriesPerPage(100);
+        public static final Consumer<Paginator.Configuration> DEFAULT = (c) -> c.setEntriesPerPage(100);
         protected Map<String, Object> query = new HashMap<>();
         public Configuration(long page) {
             query.put("page", page);

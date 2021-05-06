@@ -1,6 +1,7 @@
 package me.aj4real.connector.github.specs;
 
 import me.aj4real.connector.Connector;
+import me.aj4real.connector.Endpoint;
 import me.aj4real.connector.Request;
 import org.json.simple.JSONObject;
 
@@ -9,8 +10,8 @@ public class CreateRepositorySpec extends Request {
     private int teamId = -1;
     private boolean isPrivate, hasIssues, hasProjects, hasWiki, isTemplate, autoInit, allowSquashMerge, allowMergeCommit, allowRebaseMerge, deleteBranchOnMerge, hasDownloads;
     private boolean _teamId, _isPrivate, _hasIssues, _hasProjects, _hasWiki, _isTemplate, _autoInit, _allowSquashMerge, _allowMergeCommit, _allowRebaseMerge, _deleteBranchOnMerge, _hasDownloads = false;
-    public CreateRepositorySpec(String url) {
-        super(url);
+    public CreateRepositorySpec(Endpoint endpoint) {
+        super(endpoint);
     }
 
     public void setName(String value) {
@@ -104,9 +105,4 @@ public class CreateRepositorySpec extends Request {
         if (_deleteBranchOnMerge) data.put("delete_branch_on_merge", deleteBranchOnMerge);
         return data;
     }
-    @Override
-    public Connector.REQUEST_METHOD getRequestMethod() {
-        return Connector.REQUEST_METHOD.POST;
-    }
-
 }

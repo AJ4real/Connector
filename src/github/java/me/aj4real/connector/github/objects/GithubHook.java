@@ -1,6 +1,7 @@
 package me.aj4real.connector.github.objects;
 
-import me.aj4real.connector.Mono;
+import me.aj4real.connector.Endpoint;
+import me.aj4real.connector.Task;
 import me.aj4real.connector.github.GithubConnector;
 import org.json.simple.JSONObject;
 
@@ -25,12 +26,12 @@ public class GithubHook {
         this.id = (long) data.get("id");
     }
 
-    public Mono<GithubHook> refresh() {
-        return Mono.of(() -> {
+    public Task<GithubHook> refresh() {
+        return Task.of(() -> {
             try {
-                return new GithubHook(c, (JSONObject) c.readJson((String) data.get("url")).getData());
+                return new GithubHook(c, (JSONObject) c.readJson(new Endpoint(Endpoint.HttpMethod.GET, (String) data.get("url"))).getData());
             } catch (IOException e) {
-                e.printStackTrace();
+                me.aj4real.connector.Logger.handle(e);
             }
             return null;
         });

@@ -1,6 +1,7 @@
 package me.aj4real.connector.github.objects;
 
-import me.aj4real.connector.Mono;
+import me.aj4real.connector.Endpoint;
+import me.aj4real.connector.Task;
 import me.aj4real.connector.paginators.Paginator;
 import me.aj4real.connector.github.GithubConnector;
 import org.json.simple.JSONArray;
@@ -22,7 +23,7 @@ public class GitCommit {
         this.data = data;
         this.committer = new GithubPerson(c, (JSONObject) data.get("committer"));
         this.author = new GithubPerson(c, (JSONObject) data.get("author"));
-        JSONObject commit = (JSONObject) data.get("commit");
+        JSONObject commit = (JSONObject) data.get("github/commit");
         this.committerEmail = (String) ((JSONObject)commit.get("committer")).get("emails");
         this.committerName = (String) ((JSONObject)commit.get("committer")).get("name");
         this.authorEmail = (String) ((JSONObject)commit.get("author")).get("emails");
@@ -37,10 +38,10 @@ public class GitCommit {
     public Paginator<GitCommit> getParents() {
         return Paginator.of((i) -> {
             try {
-                String url = (String) (((JSONObject)((JSONArray) data.get("parents")).get(i)).get("url"));
-                return new GitCommit(c, (JSONObject) c.readJson(url).getData());
+                String url = (String) (((JSONObject)((JSONArray) data.get("parents")).get(i.intValue())).get("url"));
+                return new GitCommit(c, (JSONObject) c.readJson(new Endpoint(Endpoint.HttpMethod.GET, url)).getData());
             } catch (IOException e) {
-                e.printStackTrace();
+                me.aj4real.connector.Logger.handle(e);
                 return null;
             }
         });
@@ -103,14 +104,14 @@ public class GitCommit {
             this.path = (data.get("path") != null ? Optional.of((String) data.get("path")) : Optional.empty());
             this.createdAt = GithubConnector.getTimestamp((String) data.get("created_at"));
             this.updatedAt = GithubConnector.getTimestamp((String) data.get("updated_at"));
-            this.user = new GithubPerson(c, (JSONObject) data.get("user"));
+            this.user = new GithubPerson(c, (JSONObject) data.get("github/user"));
         }
-        public Mono<GitCommit.Comment> refresh() {
-            return Mono.of(() -> {
+        public Task<Comment> refresh() {
+            return Task.of(() -> {
                 try {
-                    return new Comment(c, (JSONObject) c.readJson((String) data.get("url")).getData());
+                    return new Comment(c, (JSONObject) c.readJson(new Endpoint(Endpoint.HttpMethod.GET, (String) data.get("url"))).getData());
                 } catch (IOException e) {
-                    e.printStackTrace();
+                    me.aj4real.connector.Logger.handle(e);
                     return null;
                 }
             });

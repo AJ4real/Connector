@@ -1,6 +1,7 @@
 package me.aj4real.connector.github;
 
 import me.aj4real.connector.Connector;
+import me.aj4real.connector.Endpoint;
 import me.aj4real.connector.events.Event;
 import me.aj4real.connector.Response;
 
@@ -29,36 +30,25 @@ public class GithubConnector extends Connector {
         throw new OperationNotSupportedException("Github does not support basic password authentication to their API.");
     }
 
-    public Response readJson(String strUrl, REQUEST_METHOD method, String data) throws IOException {
+    public Response readJson(Endpoint endpoint, String data) throws IOException {
         Map<String, String> headers = new HashMap<String, String>();
         headers.put("Accept", "application/vnd.github.v3+json");
-        return readJson(strUrl, method, data, headers);
+        return readJson(endpoint, data, headers);
     }
 
-    public Response readJson(String strUrl, REQUEST_METHOD method) throws IOException {
+    public Response readJson(Endpoint endpoint) throws IOException {
         Map<String, String> headers = new HashMap<String, String>();
         headers.put("Accept", "application/vnd.github.v3+json");
-        return readJson(strUrl, method, (String) null, headers); /* casting fixes error */
+        return readJson(endpoint, null, headers);
     }
-
-    public Response readJson(String strUrl) throws IOException {
-        Map<String, String> headers = new HashMap<String, String>();
-        headers.put("Accept", "application/vnd.github.v3+json");
-        return readJson(strUrl, REQUEST_METHOD.GET, null, headers);
-    }
-
-    public Response readJson(String strUrl, REQUEST_METHOD method, String data, GithubApiPreviews preview) throws IOException {
+    public Response readJson(Endpoint endpoint, String data, GithubApiPreviews preview) throws IOException {
         Map<String, String> headers = new HashMap<String, String>();
         headers.put("Accept", "application/vnd.github." + preview.getKey() + "+json");
-        return super.readJson(strUrl, method, data, headers);
+        return super.readJson(endpoint, data, headers);
     }
 
-    public Response readJson(String strUrl, REQUEST_METHOD method, GithubApiPreviews preview) throws IOException {
-        return readJson(strUrl, method, null, preview);
-    }
-
-    public Response readJson(String strUrl, GithubApiPreviews preview) throws IOException {
-        return readJson(strUrl, REQUEST_METHOD.GET, null, preview);
+    public Response readJson(Endpoint endpoint, GithubApiPreviews preview) throws IOException {
+        return readJson(endpoint, null, preview);
     }
 
     public Github getGithub() {

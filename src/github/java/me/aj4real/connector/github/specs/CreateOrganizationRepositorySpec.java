@@ -1,6 +1,7 @@
 package me.aj4real.connector.github.specs;
 
 import me.aj4real.connector.Connector;
+import me.aj4real.connector.Endpoint;
 import me.aj4real.connector.Request;
 import org.json.simple.JSONObject;
 
@@ -9,8 +10,8 @@ public class CreateOrganizationRepositorySpec extends Request {
     private int teamId = -1;
     private boolean isPrivate, hasIssues, hasProjects, hasWiki, isTemplate, autoInit, allowSquashMerge, allowMergeCommit, allowRebaseMerge, deleteBranchOnMerge;
     private boolean _teamId, _isPrivate, _hasIssues, _hasProjects, _hasWiki, _isTemplate, _autoInit, _allowSquashMerge, _allowMergeCommit, _allowRebaseMerge, _deleteBranchOnMerge = false;
-    public CreateOrganizationRepositorySpec(String url) {
-        super(url);
+    public CreateOrganizationRepositorySpec(Endpoint endpoint) {
+        super(endpoint);
     }
 
     public void setName(String value) {
@@ -97,10 +98,6 @@ this.licenseTemplate = value;
         if (_allowRebaseMerge) data.put("allow_rebase_merge", allowRebaseMerge);
         if (_deleteBranchOnMerge) data.put("delete_branch_on_merge", deleteBranchOnMerge);
         return data;
-    }
-    @Override
-    public Connector.REQUEST_METHOD getRequestMethod() {
-        return Connector.REQUEST_METHOD.POST;
     }
 
 }

@@ -8,10 +8,18 @@ import java.util.function.Consumer;
 
 public class EventHandler {
     List<Thread> listeners;
-    Map<Class<? extends Event>,List<Consumer<? extends Event>>> subscribed;
+    Map<String,List<Consumer<? extends Event>>> subscribed;
     public EventHandler() {
         this.listeners = new ArrayList<>();
-        this.subscribed = new HashMap<Class<? extends Event>,List<Consumer<? extends Event>>>();
+        this.subscribed = new HashMap<String,List<Consumer<? extends Event>>>();
+    }
+
+    public void clearHandlers(Class<? extends Event> clazz) {
+        if (subscribed.containsKey(clazz)) subscribed.remove(clazz);
+    }
+
+    public void clearHandlers() {
+        subscribed.clear();
     }
 
     public <T extends Listener> void listen(T listener) {
@@ -19,20 +27,19 @@ public class EventHandler {
     }
 
     public <T extends Event> void subscribe(Class<T> eventClass, Consumer<T> consumer) {
+        List<Consumer<? extends Event>> events;
         if (subscribed.containsKey(eventClass)) {
-            List<Consumer<? extends Event>> events = subscribed.get(eventClass);
-            events.add(consumer);
-            subscribed.put(eventClass, events);
+            events = subscribed.get(eventClass);
         } else {
-            List<Consumer<? extends Event>> events = new ArrayList<Consumer<? extends Event>>();
-            events.add(consumer);
-            subscribed.put(eventClass, events);
+            events = new ArrayList<>();
         }
+        events.add(consumer);
+        subscribed.put(eventClass.getName(), events);
     }
 
     public <T extends Event> void fire(T event) {
-        if (subscribed.containsKey(event.getClass()))  {
-            for(Consumer<? extends Event> s : subscribed.get(event.getClass())) {
+        if (subscribed.containsKey(event.getClass().getName()))  {
+            for(Consumer<? extends Event> s : subscribed.get(event.getClass().getName())) {
                 Consumer<T> sub = (Consumer<T>) s;
                 Thread t = new Thread(() -> {
                     sub.accept((T) event);

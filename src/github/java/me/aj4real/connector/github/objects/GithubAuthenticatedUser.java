@@ -1,7 +1,6 @@
 package me.aj4real.connector.github.objects;
 
-import me.aj4real.connector.Connector;
-import me.aj4real.connector.Mono;
+import me.aj4real.connector.Task;
 import me.aj4real.connector.Response;
 import me.aj4real.connector.github.GithubApiPreviews;
 import me.aj4real.connector.github.GithubConnector;
@@ -24,7 +23,7 @@ public class GithubAuthenticatedUser extends GithubUser {
     private final long publicGistsCount;
     public GithubAuthenticatedUser(GithubConnector c, JSONObject data) {
         super(c, data);
-        this.followingCount = (long) data.get("following");
+        this.followingCount = (long) data.get("github/following");
         this.followersCount = (long) data.get("followers");
         this.publicGistsCount = (long) data.get("public_gists");
         this.publicReposCount = (long) data.get("public_repos");
@@ -34,21 +33,21 @@ public class GithubAuthenticatedUser extends GithubUser {
         return Paginator.of((i) -> {
             try {
                 List<GithubOrganization> orgs = new ArrayList<GithubOrganization>();
-                JSONArray arr = (JSONArray) c.readJson(GithubEndpoints.user + "/orgs?per_page=100&page=" + i, Connector.REQUEST_METHOD.GET).getData();
+                JSONArray arr = (JSONArray) c.readJson(GithubEndpoints.AUTHENTICATED_USER_ORGANIZATIONS.addQuery("?per_page=100&page=" + i)).getData();
                 for (Object o1 : arr) {
                     orgs.add(new GithubOrganization(c, (JSONObject) o1));
                 }
                 return orgs;
             } catch (IOException e) {
-                e.printStackTrace();
+                me.aj4real.connector.Logger.handle(e);
             }
             return null;
         });
     }
 
-    public Mono<GithubRepository> createRepository(final Consumer<? super CreateRepositorySpec> spec) {
-        return Mono.of(() -> {
-            CreateRepositorySpec mutatedSpec = new CreateRepositorySpec(GithubEndpoints.user + "/repos");
+    public Task<GithubRepository> createRepository(final Consumer<? super CreateRepositorySpec> spec) {
+        return Task.of(() -> {
+            CreateRepositorySpec mutatedSpec = new CreateRepositorySpec(GithubEndpoints.CREATE_REPOSITORY.fulfil("owner", getLoginName()));
             spec.accept(mutatedSpec);
             try {
                 Response r = c.sendRequest(mutatedSpec);
@@ -56,50 +55,50 @@ public class GithubAuthenticatedUser extends GithubUser {
                     return new GithubRepository(c, (JSONObject) r.getData());
                 }
             } catch (IOException e) {
-                e.printStackTrace();
+                me.aj4real.connector.Logger.handle(e);
             }
             return null;
         });
     }
 
-    public Mono<Integer> unblockUser(String username) {
-        return Mono.of(() -> {
+    public Task<Integer> unblockUser(String username) {
+        return Task.of(() -> {
             try {
-                return c.readJson(GithubEndpoints.user + "/blocks/" + username, Connector.REQUEST_METHOD.DELETE, GithubApiPreviews.USER_BLOCKING).getResponseCode();
+                return c.readJson(GithubEndpoints.UNBLOCK_USER.fulfil("user", username), GithubApiPreviews.USER_BLOCKING).getResponseCode();
             } catch (IOException e) {
-                e.printStackTrace();
+                me.aj4real.connector.Logger.handle(e);
                 return -1;
             }
         });
     }
 
-    public Mono<Boolean> isUserBlocked(String username) {
-        return Mono.of(() -> {
+    public Task<Boolean> isUserBlocked(String username) {
+        return Task.of(() -> {
             try {
-                return c.readJson(GithubEndpoints.user + "/blocks/" + username, Connector.REQUEST_METHOD.GET, GithubApiPreviews.USER_BLOCKING).getResponseCode() == 204;
+                return c.readJson(GithubEndpoints.BLOCKED_USERS.fulfil("user", username), GithubApiPreviews.USER_BLOCKING).getResponseCode() == 204;
             } catch (IOException e) {
-                e.printStackTrace();
+                me.aj4real.connector.Logger.handle(e);
                 return false;
             }
         });
     }
 
-    public Mono<Integer> blockUser(String username) {
-        return Mono.of(() -> {
+    public Task<Integer> blockUser(String username) {
+        return Task.of(() -> {
             try {
-                return c.readJson(GithubEndpoints.user + "/blocks/" + username, Connector.REQUEST_METHOD.PUT, GithubApiPreviews.USER_BLOCKING).getResponseCode();
+                return c.readJson(GithubEndpoints.BLOCK_USER.fulfil("user", username), GithubApiPreviews.USER_BLOCKING).getResponseCode();
             } catch (IOException e) {
-                e.printStackTrace();
+                me.aj4real.connector.Logger.handle(e);
                 return -1;
             }
         });
     }
 
-    public Mono<List<GithubUser>> getBlockedUsers() {
-        return Mono.of(() -> {
+    public Task<List<GithubUser>> getBlockedUsers() {
+        return Task.of(() -> {
             List<GithubUser> users = new ArrayList<GithubUser>();
             try {
-                for(Object o : (JSONArray)c.readJson(GithubEndpoints.user + "/blocks", GithubApiPreviews.USER_BLOCKING).getData()) {
+                for(Object o : (JSONArray)c.readJson(GithubEndpoints.LIST_BLOCKED_USERS, GithubApiPreviews.USER_BLOCKING).getData()) {
                     users.add(new GithubUser(c, (JSONObject)o));
                 }
             } catch (Exception err) {
@@ -113,20 +112,20 @@ public class GithubAuthenticatedUser extends GithubUser {
         return Paginator.of((i) -> {
             try {
                 List<String> emails = new ArrayList<>();
-                JSONArray arr = (JSONArray) c.readJson(GithubEndpoints.base + "/user/emails?per_page=100&page=" + i, Connector.REQUEST_METHOD.GET).getData();
+                JSONArray arr = (JSONArray) c.readJson(GithubEndpoints.LIST_USER_EMAILS.addQuery("?per_page=100&page=" + i)).getData();
                 for (Object o : arr) {
                     emails.add((String) o);
                 }
                 return emails;
             } catch (IOException e) {
-                e.printStackTrace();
+                me.aj4real.connector.Logger.handle(e);
                 return null;
             }
         });
     }
 
-    public Mono<Integer> addEmails(Collection<String> emails) {
-        return Mono.of(() -> {
+    public Task<Integer> addEmails(Collection<String> emails) {
+        return Task.of(() -> {
             try {
                 JSONObject req = new JSONObject();
                 JSONArray arr = new JSONArray();
@@ -134,31 +133,31 @@ public class GithubAuthenticatedUser extends GithubUser {
                     arr.add(e);
                 });
                 req.put("emails", arr);
-                return c.readJson(GithubEndpoints.base + "/user/emails", Connector.REQUEST_METHOD.POST, req.toString()).getResponseCode();
+                return c.readJson(GithubEndpoints.ADD_USER_EMAIL, req.toString()).getResponseCode();
             } catch (IOException e) {
-                e.printStackTrace();
+                me.aj4real.connector.Logger.handle(e);
                 return -1;
             }
         });
     }
 
-    public Mono<Integer> addEmail(String email) {
-        return Mono.of(() -> {
+    public Task<Integer> addEmail(String email) {
+        return Task.of(() -> {
             try {
                 JSONObject req = new JSONObject();
                 JSONArray arr = new JSONArray();
                 arr.add(email);
                 req.put("emails", arr);
-                return c.readJson(GithubEndpoints.base + "/user/emails", Connector.REQUEST_METHOD.POST, req.toString()).getResponseCode();
+                return c.readJson(GithubEndpoints.ADD_USER_EMAIL, req.toString()).getResponseCode();
             } catch (IOException e) {
-                e.printStackTrace();
+                me.aj4real.connector.Logger.handle(e);
                 return -1;
             }
         });
     }
 
-    public Mono<Integer> removeEmails(Collection<String> emails) {
-        return Mono.of(() -> {
+    public Task<Integer> removeEmails(Collection<String> emails) {
+        return Task.of(() -> {
             try {
                 JSONObject req = new JSONObject();
                 JSONArray arr = new JSONArray();
@@ -166,24 +165,24 @@ public class GithubAuthenticatedUser extends GithubUser {
                     arr.add(e);
                 });
                 req.put("emails", arr);
-                return c.readJson(GithubEndpoints.base + "/user/emails", Connector.REQUEST_METHOD.DELETE, req.toString()).getResponseCode();
+                return c.readJson(GithubEndpoints.REMOVE_USER_EMAIL, req.toString()).getResponseCode();
             } catch (IOException e) {
-                e.printStackTrace();
+                me.aj4real.connector.Logger.handle(e);
                 return -1;
             }
         });
     }
 
-    public Mono<Integer> removeEmail(String email) {
-        return Mono.of(() -> {
+    public Task<Integer> removeEmail(String email) {
+        return Task.of(() -> {
             try {
                 JSONObject req = new JSONObject();
                 JSONArray arr = new JSONArray();
                 arr.add(email);
                 req.put("emails", arr);
-                return c.readJson(GithubEndpoints.base + "/user/emails", Connector.REQUEST_METHOD.DELETE, req.toString()).getResponseCode();
+                return c.readJson(GithubEndpoints.REMOVE_USER_EMAIL, req.toString()).getResponseCode();
             } catch (IOException e) {
-                e.printStackTrace();
+                me.aj4real.connector.Logger.handle(e);
                 return -1;
             }
         });
@@ -193,35 +192,35 @@ public class GithubAuthenticatedUser extends GithubUser {
         return Paginator.of((i) -> {
             try {
                 List<String> emails = new ArrayList<>();
-                JSONArray arr = (JSONArray) c.readJson(GithubEndpoints.base + "/user/public_emails?per_page=100&page=" + i, Connector.REQUEST_METHOD.GET).getData();
+                JSONArray arr = (JSONArray) c.readJson(GithubEndpoints.LIST_USER_PUBLIC_EMAILS.addQuery("?per_page=100&page=" + i)).getData();
                 for (Object o : arr) {
                     emails.add((String) o);
                 }
                 return emails;
             } catch (IOException e) {
-                e.printStackTrace();
+                me.aj4real.connector.Logger.handle(e);
                 return null;
             }
         });
     }
 
-    public Mono<Integer> follow(String username) {
-        return Mono.of(() -> {
+    public Task<Integer> follow(String username) {
+        return Task.of(() -> {
             try {
-                return c.readJson(GithubEndpoints.base + "/user/following/" + username, Connector.REQUEST_METHOD.PUT).getResponseCode();
+                return c.readJson(GithubEndpoints.AUTHENTICATED_USER_FOLLOW.fulfil("user", username)).getResponseCode();
             } catch (IOException e) {
-                e.printStackTrace();
+                me.aj4real.connector.Logger.handle(e);
                 return -1;
             }
         });
     }
 
-    public Mono<Integer> unfollow(String username) {
-        return Mono.of(() -> {
+    public Task<Integer> unfollow(String username) {
+        return Task.of(() -> {
             try {
-                return c.readJson(GithubEndpoints.base + "/user/following/" + username, Connector.REQUEST_METHOD.DELETE).getResponseCode();
+                return c.readJson(GithubEndpoints.AUTHENTICATED_USER_UNFOLLOW.fulfil("user", username)).getResponseCode();
             } catch (IOException e) {
-                e.printStackTrace();
+                me.aj4real.connector.Logger.handle(e);
                 return -1;
             }
         });
